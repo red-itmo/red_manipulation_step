@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+    <name>arm_manipulation</name>
+    <version>0.0.0</version>
+    <description>Package for control of manipulator</description>
+
+    <maintainer email="senserlex@gmail.com">Ovcharov Alexei</maintainer>
+    <license>BSD</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>roscpp</build_depend>
+    <run_depend>roscpp</run_depend>
+
+    <build_depend>brics_actuator</build_depend>
+    <run_depend>brics_actuator</run_depend>
+
+    <build_depend>arm_kinematics</build_depend>
+    <run_depend>arm_kinematics</run_depend>
+
+</package>

@@ -1,0 +1,12 @@
+<launch>
+
+	<node 
+		pkg = "arm_manipulation"
+		type = "translation_test"
+		name = "calibr_cam_pos"
+		output = "screen"
+	>
+		<rosparam command="load" file="$(find arm_manipulation)/config/calibration_info.yaml" />
+	</node>
+
+</launch>
