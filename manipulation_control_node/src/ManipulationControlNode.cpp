@@ -60,9 +60,7 @@ ManipulationControlNode::ManipulationControlNode(ros::NodeHandle n) : nh(n)
     objectContainer = std::make_pair(objectContaind, containersPose);
 
     // finding angle for camera vision manipulator position
-    std::vector<JointValues> sol;
-    solver.solveIK(initialPoseForRecognized, sol);
-    currentJointAngles = sol[0];
+    solver.solveFullyIK(initialPoseForRecognized, currentJointAngles);
 }
 
 ManipulationControlNode::~ManipulationControlNode()

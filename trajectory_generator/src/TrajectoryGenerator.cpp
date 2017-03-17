@@ -11,7 +11,7 @@ void TrajectoryGenerator::calculateTrajectory(const Pose & startPose, const Pose
 {
 	Trajectory traj;
     traj.calculateWorkSpaceTrajectory(maxVelocity, maxAcceleration, startPose, endPose, timeStep);
-    traj.convertWorkSpaceToJointSpace(timeStep);
+    traj.convertWorkSpaceToJointSpace(startPose, endPose, timeStep);
     traj.generateTrajectoryMsg(trajectory);
 }
 

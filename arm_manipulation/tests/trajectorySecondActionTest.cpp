@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
     control_msgs::FollowJointTrajectoryGoal msg;
     JointValues startAngles;
     trajectory_msgs::JointTrajectory lineTrajectory;
+    brics_actuator::JointPositions jointPositions;
 
     // START GENERATE trajectory ---------------------------
     double lr = 100;
@@ -34,8 +35,7 @@ int main(int argc, char **argv) {
 
     YoubotManipulator manipulator(n);
     ArmKinematics solver;
-    std::vector<JointValues> sol;
-    JointValues angles;
+    JointValues jointAngles;
 
     Pose startPos;
     startPos.position(0) = -0.25;
@@ -45,36 +45,35 @@ int main(int argc, char **argv) {
     startPos.orientation(1) = 0;
     startPos.orientation(2) = -3.1415;
 
-    if (!solver.solveIK(startPos, sol)) {
+    if (!solver.solveFullyIK(startPos, jointAngles)) {
         ROS_FATAL_STREAM("Solution is not found (startPos): " << startPos.position(0) << ", " << startPos.position(1)  << ", " << startPos.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
-    startPos.orientation(2) = alpha;
-    makeYoubotArmOffsets(angles);
-    ROS_INFO_STREAM("Angles: (" << angles(0) 
-    << ", " << angles(1) 
-    << ", " << angles(2)
-    << ", " << angles(3)
-    << ", " << angles(4) << ")");
+    makeYoubotArmOffsets(jointAngles);
+    ROS_INFO_STREAM("Angles: (" << jointAngles(0)
+    << ", " << jointAngles(1)
+    << ", " << jointAngles(2)
+    << ", " << jointAngles(3)
+    << ", " << jointAngles(4) << ")");
 
     Pose endPos = startPos;
     endPos.position(2) = -0.037;
-    if (!solver.solveIK(endPos, sol)) {
+    if (!solver.solveFullyIK(endPos, jointAngles)) {
         ROS_FATAL_STREAM("Solution is not found (endPos): " << endPos.position(0) << ", " << endPos.position(1)  << ", " << endPos.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
-    endPos.orientation(2) = alpha;
 
     TrajectoryGenerator gen(maxVel, maxAccel, 1/lr);
     gen.calculateTrajectory(startPos, endPos);
 
     // END GENERATE trajectory ---------------------------
-    ROS_INFO("Move to stat pose");
-    manipulator.moveArm(startPos);
+    ROS_INFO_STREAM("[Arm Manipulation] Move to initial position.");
+    for (size_t i = 0; i < 5; ++i) {
+        startAngles(i) = gen.trajectory.points[0].positions[i];
+    }
+    jointPositions = createArmPositionMsg(startAngles);
+    armPublisher.publish(jointPositions);
+    ros::Duration(2).sleep();
 
     // for (size_t p = 1; p < lineTrajectory.points.size(); ++p) {
     //     for (int i = 2; i < 5; ++i) {

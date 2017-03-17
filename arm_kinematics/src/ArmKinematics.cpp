@@ -7,48 +7,87 @@ ArmKinematics::ArmKinematics()
 ArmKinematics::~ArmKinematics()
 {}
 
-bool ArmKinematics::solveIK(const Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, std::vector<JointValues> & solutions)
+bool ArmKinematics::solveSpaceIK(Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, JointValues & jointAngles, double & alpha)
 {
-    bool valid = true;
-    double alpha = 0; // summ of phi(2) - phi(5), parameter
-    double dx = 0, dz = 0, px, pz;
-    // double offset[2] = {1, -1}; 
-    double cosPhi3 = 0;
-    JointValues phi;
-    bool sign = false; 
-    double startAlpha;
-
-    solutions.clear();
+    double dx = 0, dz = 0;
 
     dx = position(0) - d0x;
     dz = position(2) - d0z;
 
-    // Search the angles phi(1) - phi(5)
-    phi(0) = atan2(position(1), dx);
-    if (phi(0) > M_PI/2) phi(0) -= M_PI;
-    else if (phi(0) < -M_PI/2) phi(0) += M_PI;
+    jointAngles(0) = atan2(position(1), dx);
+    if (jointAngles(0) > M_PI/2) jointAngles(0) -= M_PI;
+    else if (jointAngles(0) < -M_PI/2) jointAngles(0) += M_PI;
 
-    alpha = atan2(orientation(0, 2)*cos(phi(0)) + orientation(1, 2)*sin(phi(0)), orientation(2, 2));
-    phi(4) = atan2(
-        -orientation(0, 0)*sin(phi(0)) + orientation(1, 0)*cos(phi(0)),
-        cos(alpha)*(sin(phi(0))*orientation(1, 0) + cos(phi(0))*orientation(0, 0)) - sin(alpha)*orientation(2, 0)
+    alpha = atan2(orientation(0, 2)*cos(jointAngles(0)) + orientation(1, 2)*sin(jointAngles(0)), orientation(2, 2));
+    jointAngles(4) = atan2(
+        -orientation(0, 0)*sin(jointAngles(0)) + orientation(1, 0)*cos(jointAngles(0)),
+        cos(alpha)*(sin(jointAngles(0))*orientation(1, 0) + cos(jointAngles(0))*orientation(0, 0)) - sin(alpha)*orientation(2, 0)
     );
 
     // Parallel shift and rotation of goal position
-    dx = cos(phi(0))*dx + sin(phi(0))*position(1) - d1x;
+    dx = cos(jointAngles(0))*dx + sin(jointAngles(0))*position(1) - d1x;
     dz -= d1z;
 
+    position(0) = dx;
+    position(2) = dz;
+
+    return true;
+}
+
+bool ArmKinematics::solveSpaceIK(Vector3d & position, const Vector3d & orientation, JointValues & jointAngles, double & alpha)
+{
+    matrix::Matrix<double, 3, 3> orientationMatrix;
+    calcOrientationMatrix(orientation(0), orientation(1), orientation(2), orientationMatrix);
+    return solveSpaceIK(position, orientationMatrix, jointAngles, alpha);
+}
+
+bool ArmKinematics::solvePlaneIK(Vector3d position, const double alpha, JointValues & jointAngles, const int configuration)
+{
+    double cosPhi3;
+    bool valid = true;
+
     // Check length of setting goal
-    if (sqrt(dx*dx + dz*dz) > d2 + d3 + d4) {
+    if (sqrt(position(0)*position(0) + position(2)*position(2)) > d2 + d3 + d4) {
         ROS_FATAL_STREAM("Solution NOT exists!!");
         return false;
     }
 
-    px = dx;
-    pz = dz;
+    position(0) -= d4*sin(alpha);
+    position(2) -= d4*cos(alpha);
+
+    cosPhi3 = (position(0)*position(0) + position(2)*position(2) - d2*d2 - d3*d3)/(2*d2*d3);
+    if (cosPhi3 > 1) jointAngles(2) = 0;
+    else if (cosPhi3 < -1) jointAngles(2) = M_PI;
+    else jointAngles(2) = configuration*atan2(sqrt(1 - cosPhi3*cosPhi3), cosPhi3);
+    // else jointAngles(2) = offset[i]*atan2(sqrt(1 - cosPhi3*cosPhi3), cosPhi3);
+
+    jointAngles(1) = atan2(position(0), position(2)) - atan2(d3*sin(jointAngles(2)), d2 + d3*cos(jointAngles(2)));
+    jointAngles(3) = alpha - jointAngles(2) - jointAngles(1);
+
+    // Constraints checking
+    for (uint j = 1; j < 4; ++j) {
+        valid = valid && (jointMinAngles[j] <= jointAngles(j) && jointAngles(j) <= jointMaxAngles[j]);
+    }
+
+    return valid;
+}
+
+bool ArmKinematics::solveIK(const Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, JointValues & jointAngles, const int configuration)
+{
+    Vector3d goalPosition = position;
+    double alpha = 0; // summ q2 - q5; q - joint angle
+    double startAlpha;
+    bool sign = false; // for switch sign of alpha
+
+    if (configuration != -1 && configuration != 1) {
+        ROS_FATAL_STREAM("Configuration: " << configuration << " is not valid.");
+        return false;
+    }
+
+    solveSpaceIK(goalPosition, orientation, jointAngles, alpha);
+
     startAlpha = alpha;
     uint i = 0;
-    double offset = 1;
 
     // Solve IK in plane space
     while (alpha > startAlpha - M_PI/2 && alpha < startAlpha + M_PI/2) {
@@ -57,38 +96,8 @@ bool ArmKinematics::solveIK(const Vector3d & position, matrix::Matrix<double, 3,
         sign = !sign;
         i++;
 
-        dx = px - d4*sin(alpha);
-        dz = pz - d4*cos(alpha);
+        if(solvePlaneIK(goalPosition, alpha, jointAngles, configuration)) return true;
 
-        for (uint k = 0; k < 2; ++k) { 
-            valid = true;
-            cosPhi3 = (dx*dx + dz*dz - d2*d2 - d3*d3)/(2*d2*d3);
-            if (cosPhi3 > 1) phi(2) = 0;
-            else if (cosPhi3 < -1) phi(2) = M_PI;
-            else phi(2) = offset*atan2(sqrt(1 - cosPhi3*cosPhi3), cosPhi3);
-            offset *= -1;
-            // else phi(2) = offset[i]*atan2(sqrt(1 - cosPhi3*cosPhi3), cosPhi3);
-
-            phi(1) = atan2(dx, dz) - atan2(d3*sin(phi(2)), d2 + d3*cos(phi(2)));
-            phi(3) = alpha - phi(2) - phi(1);
-
-            // Constraints checking 
-            for (uint j = 1; j < 4; ++j) {
-                valid = valid && (jointMinAngles[j] <= phi(j) && phi(j) <= jointMaxAngles[j]);
-            }
-     
-            if (valid) {
-                solutions.push_back(phi);
-                // ROS_INFO_STREAM("jointValues: (" << 
-                //     phi(0) << ", " <<
-                //     phi(1) << ", " <<
-                //     phi(2) << ", " <<
-                //     phi(3) << ", " <<
-                //     phi(4) << ")");
-                // ROS_INFO_STREAM("Alpha: (" << alpha << ")");
-                return true;
-            }
-        }
     }
     return false;
 }
@@ -108,38 +117,37 @@ void ArmKinematics::calcOrientationMatrix(double phi1, double phi5, double alpha
     orientation(2, 2) = cos(alpha);
 }
 
-bool ArmKinematics::solveIK(const Vector3d & position, const double phi5, const double alpha, std::vector<JointValues> & solutions)
+bool ArmKinematics::solveIK(const Vector3d & position, const double phi5, const double alpha, JointValues & jointAngles, const int configuration)
 {
 
     double phi1 = atan2(position(1), (position(0) - d0x));
 	if (phi1 < jointMaxAngles[0] || phi1 > jointMinAngles[0]) phi1 += M_PI;
     matrix::Matrix<double, 3, 3> orientation;
 
-    // ROS_INFO_STREAM("phi: (" << phi1 << ", " << phi5 << ", " << alpha << ")");
-    // ROS_INFO_STREAM("pos: (" << position(0) << ", " << position(1) << ", " << position(2) << ")");
-
     calcOrientationMatrix(phi1, phi5, alpha, orientation);
 
-    return ArmKinematics::solveIK(position, orientation, solutions);
+    return ArmKinematics::solveIK(position, orientation, jointAngles, configuration);
 }
-
-bool ArmKinematics::solveIK(const Vector3d & position, const double phi1, const double phi5, const double alpha, std::vector<JointValues> & solutions)
+bool ArmKinematics::solveIK(const Vector3d & position, const Vector3d & orientation, JointValues & jointAngles, const int configuration)
 {
-    matrix::Matrix<double, 3, 3> orientation;
-    calcOrientationMatrix(phi1, phi5, alpha, orientation);
-    return ArmKinematics::solveIK(position, orientation, solutions);
+    matrix::Matrix<double, 3, 3> orientationMatrix;
+    calcOrientationMatrix(orientation(0), orientation(1), orientation(2), orientationMatrix);
+    return ArmKinematics::solveIK(position, orientationMatrix, jointAngles, configuration);
 }
-bool ArmKinematics::solveIK(const Vector3d & position, const Vector3d & rotationAngles, std::vector<JointValues> & solutions)
-{
-    matrix::Matrix<double, 3, 3> orientation;
-    calcOrientationMatrix(rotationAngles(0), rotationAngles(1), rotationAngles(2), orientation);
-    return ArmKinematics::solveIK(position, orientation, solutions);
-}
-bool ArmKinematics::solveIK(const Pose & position, std::vector<JointValues> & solutions)
+bool ArmKinematics::solveIK(const Pose & position, JointValues & jointAngles, const int configuration)
 {
     matrix::Matrix<double, 3, 3> orientation;
     calcOrientationMatrix(position.orientation(0), position.orientation(1), position.orientation(2), orientation);
-    return ArmKinematics::solveIK(position.position, orientation, solutions);
+    return ArmKinematics::solveIK(position.position, orientation, jointAngles, configuration);
+}
+
+bool ArmKinematics::solveFullyIK(const Pose & position, JointValues & jointAngles)
+{
+    matrix::Matrix<double, 3, 3> orientation;
+    calcOrientationMatrix(position.orientation(0), position.orientation(1), position.orientation(2), orientation);
+
+    if (solveIK(position.position, orientation, jointAngles, 1)) return true;
+    else return solveIK(position.position, orientation, jointAngles, -1);
 }
 
 void ArmKinematics::calcKinematicsParams(const Vector3d & linearVelocities, const JointValues & jointAngles, JointValues & jointAngVel, JointValues & jointAngAcc)

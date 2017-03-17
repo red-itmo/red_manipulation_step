@@ -47,6 +47,10 @@ add_library(arm_kinematics
     src/ArmKinematics.cpp
 )
 
+target_link_libraries(arm_kinematics
+    ${catkin_LIBRARIES}
+)
+
 #install binary and lib
 install(TARGETS arm_kinematics
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

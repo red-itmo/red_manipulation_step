@@ -25,9 +25,7 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
     const double acceleration[4] = {0, maxAccel, 0, -maxAccel};
 
     initPos = startPose.position;
-    currRot = startPose.orientation;
     positionDiff = endPose.position - initPos;
-    rotationDiff = endPose.orientation - currRot;
     movementDirection = positionDiff;
     movementDirection.normalize();
 
@@ -39,7 +37,6 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
         (maxVel*maxVel + positionDiff.norm()*maxAccel)/(maxAccel*maxVel)    // acceleration = -maxAccel; end velocity = 0;
     };
     ROS_INFO_STREAM("Time variables: " << trajectoryTime[1] << ", " << trajectoryTime[2] << ", " << trajectoryTime[3]);
-    rotVel = rotationDiff / trajectoryTime[2];
 
     // Initial conditions
     double currentTime = 0;
@@ -54,12 +51,10 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
 
             currVel = initVel + currAccel * (currentTime - trajectoryTime[i - 1]);
             currPos = initPos + initVel * (currentTime - trajectoryTime[i - 1]) + currAccel * pow(currentTime - trajectoryTime[i - 1], 2) / 2;
-            currRot += rotVel * timeStep;
 
             posTra.push_back(currPos);
             velTra.push_back(currVel);
             accTra.push_back(currAccel);
-            rotTra.push_back(currRot);
             time.push_back(currentTime);
             // ROS_INFO_STREAM("p: " << currPos(0) << ", " << currPos(1) << ", " << currPos(2) << "\ttime: " << currentTime << "\tDelta time: " << (trajectoryTime[i] - currentTime));
 
@@ -74,91 +69,122 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
 
         initPos = initPos + initVel * (currentTime - trajectoryTime[i - 1]) + currAccel * pow(currentTime - trajectoryTime[i - 1], 2) / 2;
         initVel = initVel + currAccel * (currentTime - trajectoryTime[i - 1]);
-        currRot += rotVel * timeStep;
 
         posTra.push_back(initPos);
         velTra.push_back(initVel);
         accTra.push_back(currAccel);
-        rotTra.push_back(currRot);
         time.push_back(currentTime);
         // ROS_INFO_STREAM("accel: " << acceleration[i] << "\ttime: " << currentTime << "\tvel: " << initVel(0) << ", " << initVel(1) << ", " << initVel(2));
 
         currentTime += timeStep;
     }
 }
-void Trajectory::convertWorkSpaceToJointSpace(const double timeStep)
+void Trajectory::convertWorkSpaceToJointSpace(const Pose & startPose, const Pose & endPose, const double timeStep)
 {
     JointValues currJntAng, currJntAngVel, currJntAngAcc;
     JointValues prevAngles, currAngles, nextAngles;
-    std::vector<JointValues> solutions;
-    std::vector<JointValues> jntVel;
     ArmKinematics solver;
     double prevTime, currTime, nextTime;
+    bool err = false;
 
-    const double kernel = 50;
-    const double alpha = 2 / (kernel + 1);
+    Vector3d rotVel, startRot, endRot, currRot, currPosition;
+    double startAlpha, endAlpha, alpha, alphaVel;
 
-    std::vector<Vector3d>::iterator posIT = posTra.begin();
-    std::vector<Vector3d>::iterator velIT = velTra.begin();
-    std::vector<Vector3d>::iterator rotIT = rotTra.begin();
+    startRot = startPose.orientation;
+    endRot = endPose.orientation;
 
-    for (posIT; posIT != posTra.end(); ++posIT, ++rotIT, ++velIT) {
-        if (!solver.solveIK(*posIT, *rotIT, solutions)) {
-            ROS_ERROR_STREAM("Trajectory is not feasible");
-            return;
+    for (int configuration = -1; configuration < 2; configuration += 2) {
+        rotTra.clear();
+        qTra.clear();
+
+        if (solver.solveIK(startPose, currJntAng, configuration)) 
+            startAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
+        else {
+            ROS_WARN_STREAM("Solution for start position with configuration: " << configuration << " is not found");
+            continue;
         }
-        currJntAng = solutions[0];
-        // solver.calcKinematicsParams(*velIT, currJntAng, currJntAngVel, currJntAngAcc);
-        makeYoubotArmOffsets(currJntAng);
 
-        qTra.push_back(currJntAng);
-        // qdotTra.push_back(currJntAngVel);
-        // qdotdotTra.push_back(currJntAngAcc);
+        if (solver.solveIK(endPose, currJntAng, configuration)) 
+            endAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
+        else {
+            ROS_WARN_STREAM("Solution for end position with configuration: " << configuration << " is not found");
+            continue;
+        }
+
+        startRot(2) = startAlpha;
+        endRot(2) = endAlpha;
+        rotVel = (endRot - startRot)/(posTra.size() - 1);
+
+        currRot = startRot;
+        for (size_t i = 0; i < posTra.size(); ++i) {
+            rotTra.push_back(currRot);
+            currRot += rotVel;
+        }
+
+        std::vector<Vector3d>::iterator posIT = posTra.begin();
+        std::vector<Vector3d>::iterator velIT = velTra.begin();
+        std::vector<Vector3d>::iterator rotIT = rotTra.begin();
+
+        for (posIT; posIT != posTra.end(); ++posIT, ++velIT, ++rotIT) {
+            if (!solver.solveIK(*posIT, *rotIT, currJntAng, configuration)) {
+                ROS_WARN_STREAM("Solution is not found at configuration: " << configuration);
+                err = true; 
+                break;
+            }
+            makeYoubotArmOffsets(currJntAng);
+
+            qTra.push_back(currJntAng);
+        }
+
+        if (err == true) continue;
+
+        std::vector<JointValues>::iterator pp = qTra.begin() - 1;
+        std::vector<JointValues>::iterator np = qTra.begin() + 1;
+
+        for (std::vector<JointValues>::iterator cp = qTra.begin(); cp != qTra.end(); ++cp) {
+            if (pp == qTra.begin() - 1) {
+                prevAngles = *cp;
+                // prevTime = *ct;
+            } else {
+                prevAngles = *pp;
+                // prevTime = *pt;
+            }
+            currAngles = *cp;
+            // currTime = *ct;
+            if (np == qTra.end()) {
+                nextAngles = *cp;
+                // nextTime = *ct;
+            } else {
+                nextAngles = *np;
+                // nextTime = *nt;
+            }
+
+            //forward difference for velocity
+            currJntAngVel = (nextAngles - currAngles) / timeStep;
+
+            //second derivative for acceleration (f(x+h)-2*f(x)+f(x-h))/timeStep^2
+            currJntAngAcc = (nextAngles - 2.0 * currAngles + prevAngles) / pow(timeStep, 2);
+
+            qdotTra.push_back(currJntAngVel);
+            qdotdotTra.push_back(currJntAngAcc);
+            ++pp; ++np;
+            // ++pt; ++ct; ++nt;
+        }
+        
+        currJntAngVel.setZero();
+        qdotTra.erase(qdotTra.begin());
+        qdotTra.erase(qdotTra.end());
+        qdotTra.insert(qdotTra.begin(), currJntAngVel);
+        qdotTra.insert(qdotTra.end(), currJntAngVel);
+        currJntAngAcc.setZero();
+        qdotdotTra.erase(qdotdotTra.begin());
+        qdotdotTra.erase(qdotdotTra.end());
+        qdotdotTra.insert(qdotdotTra.begin(), currJntAngAcc);
+        qdotdotTra.insert(qdotdotTra.end(), currJntAngAcc);
+
+        return;
     }
-
-    std::vector<JointValues>::iterator pp = qTra.begin() - 1;
-    std::vector<JointValues>::iterator np = qTra.begin() + 1;
-
-    for (std::vector<JointValues>::iterator cp = qTra.begin(); cp != qTra.end(); ++cp) {
-        if (pp == qTra.begin() - 1) {
-            prevAngles = *cp;
-            // prevTime = *ct;
-        } else {
-            prevAngles = *pp;
-            // prevTime = *pt;
-        }
-        currAngles = *cp;
-        // currTime = *ct;
-        if (np == qTra.end()) {
-            nextAngles = *cp;
-            // nextTime = *ct;
-        } else {
-            nextAngles = *np;
-            // nextTime = *nt;
-        }
-
-        //forward difference for velocity
-        currJntAngVel = (nextAngles - currAngles) / timeStep;
-
-        //second derivative for acceleration (f(x+h)-2*f(x)+f(x-h))/timeStep^2
-        currJntAngAcc = (nextAngles - 2.0 * currAngles + prevAngles) / pow(timeStep, 2);
-
-        qdotTra.push_back(currJntAngVel);
-        qdotdotTra.push_back(currJntAngAcc);
-        ++pp; ++np;
-        // ++pt; ++ct; ++nt;
-    }
-    
-    currJntAngVel.setZero();
-    qdotTra.erase(qdotTra.begin());
-    qdotTra.erase(qdotTra.end());
-    qdotTra.insert(qdotTra.begin(), currJntAngVel);
-    qdotTra.insert(qdotTra.end(), currJntAngVel);
-    currJntAngAcc.setZero();
-    qdotdotTra.erase(qdotdotTra.begin());
-    qdotdotTra.erase(qdotdotTra.end());
-    qdotdotTra.insert(qdotdotTra.begin(), currJntAngAcc);
-    qdotdotTra.insert(qdotdotTra.end(), currJntAngAcc);
+    ROS_FATAL_STREAM("Trajectory is not construct.");
 }
 
 void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajectory)

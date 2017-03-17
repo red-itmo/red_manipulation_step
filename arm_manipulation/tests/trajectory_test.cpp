@@ -108,7 +108,7 @@ int main(int argc, char  ** argv)
     }
 
     YoubotManipulator manipulator(nh);
-    std::vector<JointValues> sol;
+    JointValues solution;
     JointValues angles;
     TrajectoryGenerator gen(maxVel, maxAccel, 1/lr);
 
@@ -122,12 +122,11 @@ int main(int argc, char  ** argv)
     // GO to initial pose
     std::vector<Pose>::iterator it = poseArray.begin();
     Pose startPos = *it;
-    if (!solver.solveIK(startPos, sol)) {
+    if (!solver.solveFullyIK(startPos, solution)) {
         ROS_FATAL_STREAM("Solution is not found (startPos): " << startPos.position(0) << ", " << startPos.position(1)  << ", " << startPos.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
+    alpha = solution(1) + solution(2) + solution(3);
     startPos.orientation(2) = alpha;
     manipulator.moveArm(startPos);
     ros::Duration(2).sleep();
@@ -141,24 +140,22 @@ int main(int argc, char  ** argv)
         trajectory_msgs::JointTrajectory lineTrajectory;
 
         startPos = *it;
-        if (!solver.solveIK(startPos, sol)) {
+        if (!solver.solveFullyIK(startPos, solution)) {
             ROS_FATAL_STREAM("Solution is not found (startPos): " << startPos.position(0) << ", " << startPos.position(1)  << ", " << startPos.position(2));
             return 1;
         }
-        angles = sol[0];
-        alpha = angles(1) + angles(2) + angles(3);
+        alpha = solution(1) + solution(2) + solution(3);
         startPos.orientation(2) = alpha;
         manipulator.moveArm(startPos);
         ros::Duration(1).sleep();
 
         Pose endPos = startPos;
         endPos.position(2) = wall;
-        if (!solver.solveIK(endPos, sol)) {
+        if (!solver.solveFullyIK(endPos, solution)) {
             ROS_FATAL_STREAM("Solution is not found (endPos): " << endPos.position(0) << ", " << endPos.position(1)  << ", " << endPos.position(2));
             return 1;
         }
-        angles = sol[0];
-        alpha = angles(1) + angles(2) + angles(3);
+        alpha = solution(1) + solution(2) + solution(3);
         endPos.orientation(2) = alpha;
 
         std::cout << "start p( " << startPos.position(0) << ", " << startPos.position(1) << ", " << startPos.position(2) << ")" << std::endl;

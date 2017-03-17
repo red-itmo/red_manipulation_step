@@ -24,13 +24,12 @@ YoubotManipulator::~YoubotManipulator() {}
 void YoubotManipulator::moveArm(const Pose & pose)
 {
     brics_actuator::JointPositions jointPositions;
-    std::vector<JointValues> solutions;
+    JointValues jointAngles;
 
     ROS_INFO_STREAM("[Arm Manipulation] Position: (" << pose.position(0) << " " << pose.position(1) << " " << pose.position(2) << ")");
     ROS_INFO_STREAM("[Arm Manipulation] Orientation: (" << pose.orientation(0) << " " << pose.orientation(1) << " " << pose.orientation(2) << ")");
     
-    if (solver.solveIK(pose, solutions)) {
-        JointValues jointAngles = solutions[0];
+    if (solver.solveFullyIK(pose, jointAngles)) {
         // Convert joint values
         makeYoubotArmOffsets(jointAngles);
         jointPositions = createArmPositionMsg(jointAngles);
@@ -100,9 +99,8 @@ bool YoubotManipulator::goToPose(arm_kinematics::ManipulatorPose::Request & req,
 }
 bool YoubotManipulator::followTrajectory(arm_kinematics::PoseArray::Request & req, arm_kinematics::PoseArray::Response & res)
 {
-    JointValues angles;
-    std::vector<JointValues> sol;
-    double objectHeight = 0.05, alpha = 0;
+    JointValues jointAngles;
+    double objectHeight = 0.05;
     res.feasible = false;
 
     // First Step --------
@@ -115,23 +113,16 @@ bool YoubotManipulator::followTrajectory(arm_kinematics::PoseArray::Request & re
     startPose.orientation(2) = req.pose_array[0].orientation[2];
     Pose endPose = startPose;
 
-    startPose.position(2) += objectHeight;
-    if (!solver.solveIK(startPose, sol)) {
+    startPose.position(2) += 0.05;
+    if (!solver.solveFullyIK(startPose, jointAngles)) {
         ROS_FATAL_STREAM("Solution is not found (startPos): " << startPose.position(0) << ", " << startPose.position(1)  << ", " << startPose.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
-    startPose.orientation(2) = alpha;
 
-    endPose.orientation(2) = alpha; // ???????????????
-    if (!solver.solveIK(endPose, sol)) {
+    if (!solver.solveFullyIK(endPose, jointAngles)) {
         ROS_FATAL_STREAM("Solution is not found (endPos): " << endPose.position(0) << ", " << endPose.position(1)  << ", " << endPose.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
-    endPose.orientation(2) = alpha;
     
     moveArm(startPose);
     ros::Duration(1).sleep();
@@ -153,22 +144,16 @@ bool YoubotManipulator::followTrajectory(arm_kinematics::PoseArray::Request & re
     endPose = startPose;
 
     startPose.position(2) += 0.05;
-    if (!solver.solveIK(startPose, sol)) {
+    if (!solver.solveFullyIK(startPose, jointAngles)) {
         ROS_FATAL_STREAM("Solution is not found (startPos): " << startPose.position(0) << ", " << startPose.position(1)  << ", " << startPose.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
-    startPose.orientation(2) = alpha;
 
-    endPose.orientation(2) = alpha;
-    if (!solver.solveIK(endPose, sol)) {
+    if (!solver.solveFullyIK(endPose, jointAngles)) {
         ROS_FATAL_STREAM("Solution is not found (endPos): " << endPose.position(0) << ", " << endPose.position(1)  << ", " << endPose.position(2));
         return 1;
     }
-    angles = sol[0];
-    alpha = angles(1) + angles(2) + angles(3);
-    endPose.orientation(2) = alpha;
+
 
     moveArm(startPose);
     ros::Duration(2).sleep();
@@ -183,13 +168,23 @@ bool YoubotManipulator::followTrajectory(arm_kinematics::PoseArray::Request & re
 
 void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose & endPose)
 {
-    std::vector<JointValues> sol;
+    JointValues startAngles;
+    brics_actuator::JointPositions jointPositions;
     double startVel = 0;
     double endVel = 0;
 
     ROS_INFO_STREAM("[Arm Manipulation] Max Vel: " << maxVel << "\t Max Accel: " << maxAccel);
     TrajectoryGenerator gen(maxVel, maxAccel, 1/lr);
     gen.calculateTrajectory(startPose, endPose);
+
+    ROS_INFO_STREAM("[Arm Manipulation] Move to initial position.");
+    for (size_t i = 0; i < 5; ++i) {
+        startAngles(i) = gen.trajectory.points[0].positions[i];
+    }
+    jointPositions = createArmPositionMsg(startAngles);
+    armPublisher.publish(jointPositions);
+    ros::Duration(2).sleep();
+
 
     if (!gen.trajectory.points.empty())
     {
