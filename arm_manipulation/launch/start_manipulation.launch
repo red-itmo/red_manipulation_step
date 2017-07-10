@@ -5,9 +5,9 @@
 		name = "move_by_camera"
 		output = "screen"
 	>
-		<param name="camera_offset_x" type="double" value="0.051" />
-		<param name="camera_offset_y" type="double" value="0.0048" />
-		<param name="camera_offset_z" type="double" value="0.0" />
+		<param name="camera_offset_x" type="double" value="0.0262079" />
+		<param name="camera_offset_y" type="double" value="0.0113468" />
+		<param name="camera_offset_z" type="double" value="-0.015" />
 	</node>
 
 </launch>
