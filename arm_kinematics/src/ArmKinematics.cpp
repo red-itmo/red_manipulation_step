@@ -46,14 +46,14 @@ bool ArmKinematics::solvePlaneIK(Vector3d position, const double alpha, JointVal
     double cosPhi3;
     bool valid = true;
 
+    position(0) -= (d4 + griperLength)*sin(alpha);
+    position(2) -= (d4 + griperLength)*cos(alpha);
+
     // Check length of setting goal
-    if (sqrt(position(0)*position(0) + position(2)*position(2)) > d2 + d3 + d4) {
-        ROS_FATAL_STREAM("Solution NOT exists!!");
+    if (sqrt(position(0)*position(0) + position(2)*position(2)) > d2 + d3) {
+        // ROS_FATAL_STREAM("Solution NOT exists!!");
         return false;
     }
-
-    position(0) -= d4*sin(alpha);
-    position(2) -= d4*cos(alpha);
 
     cosPhi3 = (position(0)*position(0) + position(2)*position(2) - d2*d2 - d3*d3)/(2*d2*d3);
     if (cosPhi3 > 1) jointAngles(2) = 0;
