@@ -7,6 +7,7 @@ int main(int argc, char ** argv)
     ros::NodeHandle nh;
 
     YoubotManipulator manipulator(nh);
+    manipulator.initArmTopics();
 
     // Initial conditions
     Pose pose;

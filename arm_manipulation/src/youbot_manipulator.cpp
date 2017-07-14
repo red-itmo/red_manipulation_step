@@ -5,32 +5,47 @@
 YoubotManipulator::YoubotManipulator(ros::NodeHandle & nodeHandle)
     :nh(nodeHandle)
 {
+    nh.param("youBotDriverCycleFrequencyInHz", lr, 100.0);
+}
+
+YoubotManipulator::~YoubotManipulator() {}
+
+void YoubotManipulator::initArmTopics()
+{
     ROS_INFO_STREAM("[Arm Manipulation] Load YouBot Arm Manipulation..." << "\n");
     ROS_INFO_STREAM("[Arm Manipulation] Publisher: arm_1/arm_controller/position_command...");
     armPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/arm_controller/position_command", 1);
     ROS_INFO_STREAM("[Arm Manipulation] Publisher: arm_1/gripper_controller/position_command...");
     gripperPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/gripper_controller/position_command", 1);
-
-    // Reading variable for trajectory control
-    nh.param("youBotDriverCycleFrequencyInHz", lr, 100.0);
-    nh.param("/arm_manipulation/max_vel", maxVel, 0.03);
-    nh.param("/arm_manipulation/max_accel", maxAccel, 0.1);
-
-    sleep(1);
 }
 
-YoubotManipulator::~YoubotManipulator() {}
+void YoubotManipulator::initActionClient(const double aMax, const double vMax)
+{
+    maxAccel = aMax;
+    maxVel = vMax;
+
+    ROS_INFO_STREAM("[Arm Manipulation] Load ActionClient arm_1/arm_controller/velocity_joint_trajecotry");
+    trajectoryAC = new ActionClent("arm_1/arm_controller/velocity_joint_trajecotry", true);
+
+    ROS_INFO_STREAM("[Arm Manipulation] TRJ parameters:"
+        << " Driver Rate: " << lr
+        << " Max Vel.: " << maxVel
+        << " Max Accel.: " << maxAccel);
+}
 
 void YoubotManipulator::moveArm(const Pose & pose)
 {
     brics_actuator::JointPositions jointPositions;
     JointValues jointAngles;
+    Vector3d zeros, pos;
 
     ROS_INFO_STREAM("[Arm Manipulation] Position: (" << pose.position(0) << " " << pose.position(1) << " " << pose.position(2) << ")");
     ROS_INFO_STREAM("[Arm Manipulation] Orientation: (" << pose.orientation(0) << " " << pose.orientation(1) << " " << pose.orientation(2) << ")");
     
     if (solver.solveFullyIK(pose, jointAngles)) {
         // Convert joint values
+        pos = solver.transformFromFrame5ToFrame0(jointAngles, zeros);
+        ROS_INFO_STREAM("Forw. Kin. Pos.: (" << pos(0) << ", " << pos(1) << ", " << pos(2) << ")");
         makeYoubotArmOffsets(jointAngles);
         jointPositions = createArmPositionMsg(jointAngles);
         ROS_INFO_STREAM("[Arm Manipulation] Sending command...");
@@ -180,6 +195,10 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
 
 void YoubotManipulator::moveArmLoop()
 {
+    // Reading variable for trajectory control
+    nh.param("/arm_manipulation/max_vel", maxVel, 0.03);
+    nh.param("/arm_manipulation/max_accel", maxAccel, 0.1);
+
     ROS_INFO_STREAM("[Arm Manipulation] Load all modules.");
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /grasp_object...");
     trajectoryServer = nh.advertiseService("grasp_object", &YoubotManipulator::graspObject, this);
@@ -187,13 +206,7 @@ void YoubotManipulator::moveArmLoop()
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /manipulator_pose...");
     poseServer = nh.advertiseService("manipulator_pose", &YoubotManipulator::goToPose, this);
 
-    ROS_INFO_STREAM("[Arm Manipulation] Load ActionClient arm_1/arm_controller/velocity_joint_trajecotry");
-    trajectoryAC = new ActionClent("arm_1/arm_controller/velocity_joint_trajecotry", true);
-
-    ROS_INFO_STREAM("[Arm Manipulation] Params:"
-        << " lr: " << lr << "\t"
-        << " max_vel: " << maxVel << "\t"
-        << " max_accel: " << maxAccel);
+    initActionClient(maxAccel, maxVel);
     
     while(nh.ok()) {
         ros::spin();

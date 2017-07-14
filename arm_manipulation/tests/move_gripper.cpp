@@ -14,6 +14,7 @@ int main(int argc, char ** argv)
     std::string str(argv[1]);
 
     YoubotManipulator manipulator(nh);
+    manipulator.initArmTopics();
     ros::Duration(2).sleep();
 
     if (str == "open") manipulator.moveGripper(0.0115);

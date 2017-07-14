@@ -35,23 +35,10 @@ add_executable(translation_test tests/translationTest.cpp)
 target_link_libraries(translation_test
     ${catkin_LIBRARIES}
 )
-#add_executable(logger tests/logger.cpp)
-#target_link_libraries(logger
-#    ${catkin_LIBRARIES}
-#)
 add_executable(trajectory_test tests/trajectory_test.cpp src/youbot_manipulator.cpp)
 target_link_libraries(trajectory_test
     ${catkin_LIBRARIES}
 )
-add_executable(trajectory_action_test tests/trajectoryActionTest.cpp src/youbot_manipulator.cpp)
-target_link_libraries(trajectory_action_test
-    ${catkin_LIBRARIES}
-)
-add_executable(trajectory_action_second_test tests/trajectorySecondActionTest.cpp src/youbot_manipulator.cpp)
-target_link_libraries(trajectory_action_second_test
-    ${catkin_LIBRARIES}
-)
-
 
 add_executable(move_by_camera src/move_by_camera.cpp src/youbot_manipulator.cpp)
 target_link_libraries(move_by_camera

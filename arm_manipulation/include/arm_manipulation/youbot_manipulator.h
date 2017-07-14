@@ -31,6 +31,9 @@ class YoubotManipulator
         void moveToLineTrajectory(const Pose & startPose, const Pose & endPose);
         void moveArmLoop();
 
+        void initArmTopics();
+        void initActionClient(const double aMax, const double vMax);
+
     private:
         ros::NodeHandle nh;
 
