@@ -1,0 +1,6 @@
+start_position: [0.36, -0.08, 0.0]
+end_position: [0.36, -0.08, -0.1]
+angles: [0, 3.1415]
+v_m: 0.01
+a_m: 0.01
+time_step: 0.033

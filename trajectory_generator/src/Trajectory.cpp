@@ -21,7 +21,7 @@ void Trajectory::exponencialMovingAvarage(std::vector<JointValues> & data, std::
 
 void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep)
 {
-    Vector3d positionDiff, rotationDiff, movementDirection, rotVel, currPos, currVel, currAccel, currRot, initPos, initVel;
+    Vector3d positionDiff, rotationDiff, movementDirection, rotVel, currPos, currRot, initPos;
     const double acceleration[4] = {0, maxAccel, 0, -maxAccel};
 
     initPos = startPose.position;
@@ -36,53 +36,37 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
         positionDiff.norm()/maxVel,                                         // acceleration = 0; velocity = maxVel;
         (maxVel*maxVel + positionDiff.norm()*maxAccel)/(maxAccel*maxVel)    // acceleration = -maxAccel; end velocity = 0;
     };
-    ROS_INFO_STREAM("Time variables: " << trajectoryTime[1] << ", " << trajectoryTime[2] << ", " << trajectoryTime[3]);
+    ROS_INFO_STREAM("[Trajectory] Time variables (" << trajectoryTime[1] << ", " << trajectoryTime[2] << ", " << trajectoryTime[3] << ")");
+    ROS_INFO_STREAM("[Trajectory] Movement Dir (" << movementDirection(0) << ", " << movementDirection(1) << ", " << movementDirection(2) << ")");
 
-    // Initial conditions
     double currentTime = 0;
-
-    for (size_t i = 1; i < 4; ++i) {
-
-        currAccel = movementDirection * acceleration[i];
-        currVel = initVel;
-        currPos = initPos;
-
-        while ((trajectoryTime[i] - currentTime) > 0.0001) {
-
-            currVel = initVel + currAccel * (currentTime - trajectoryTime[i - 1]);
-            currPos = initPos + initVel * (currentTime - trajectoryTime[i - 1]) + currAccel * pow(currentTime - trajectoryTime[i - 1], 2) / 2;
-
-            posTra.push_back(currPos);
-            velTra.push_back(currVel);
-            accTra.push_back(currAccel);
-            time.push_back(currentTime);
-            // ROS_INFO_STREAM("p: " << currPos(0) << ", " << currPos(1) << ", " << currPos(2) << "\ttime: " << currentTime << "\tDelta time: " << (trajectoryTime[i] - currentTime));
-
-            currentTime += timeStep;
-        }
-
-        currentTime = trajectoryTime[i];
-        if ((currentTime - trajectoryTime[i - 1]) < 0.0001) {
-            currentTime += timeStep;
-            continue;
-        }
-
-        initPos = initPos + initVel * (currentTime - trajectoryTime[i - 1]) + currAccel * pow(currentTime - trajectoryTime[i - 1], 2) / 2;
-        initVel = initVel + currAccel * (currentTime - trajectoryTime[i - 1]);
-
-        posTra.push_back(initPos);
-        velTra.push_back(initVel);
-        accTra.push_back(currAccel);
+    // Initial state of trajectory - x(0) = 0
+    for (; currentTime <= trajectoryTime[1]; currentTime += timeStep) {
+        currPos = maxAccel*currentTime*currentTime/2.0 * movementDirection + initPos;
+        posTra.push_back(currPos);
         time.push_back(currentTime);
-        // ROS_INFO_STREAM("accel: " << acceleration[i] << "\ttime: " << currentTime << "\tvel: " << initVel(0) << ", " << initVel(1) << ", " << initVel(2));
-
-        currentTime += timeStep;
     }
+    for (; currentTime < trajectoryTime[2]; currentTime += timeStep) {
+        currPos = (maxVel*currentTime - maxAccel*trajectoryTime[1]*trajectoryTime[1]/2.0) * movementDirection + initPos;
+        posTra.push_back(currPos);
+        time.push_back(currentTime);
+    }
+    for (; currentTime <= trajectoryTime[3]; currentTime += timeStep) {
+        currPos = (- maxAccel*currentTime*currentTime/2.0
+                 + maxAccel*(trajectoryTime[1] + trajectoryTime[2])*currentTime
+                 - maxAccel*(trajectoryTime[1]*trajectoryTime[1] + trajectoryTime[2]*trajectoryTime[2])/2.0) * movementDirection + initPos;
+        posTra.push_back(currPos);
+        time.push_back(currentTime);
+    }
+    // End state of trajectory - x(endTime) = endPose.norm()
+    posTra.push_back(endPose.position);
+    time.push_back(currentTime);
 }
-void Trajectory::convertWorkSpaceToJointSpace(const Pose & startPose, const Pose & endPose, const double timeStep)
+
+void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, const double timeStep)
 {
     JointValues currJntAng, currJntAngVel, currJntAngAcc;
-    JointValues prevAngles, currAngles, nextAngles;
+    JointValues prevAngles, currAngles, nextAngles, anglesDiff;
     ArmKinematics solver;
     double prevTime, currTime, nextTime;
     bool err = false;
@@ -104,11 +88,18 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose & startPose, const Pose
             continue;
         }
 
+        endPose.orientation(2) = startAlpha;
         if (solver.solveIK(endPose, currJntAng, configuration)) 
             endAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
         else {
             ROS_WARN_STREAM("Solution for end position with configuration: " << configuration << " is not found");
             continue;
+        }
+
+        if (startAlpha != endAlpha) {
+            startPose.orientation(2) = endAlpha;
+            solver.solveIK(startPose, currJntAng, configuration);
+            startAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
         }
 
         startRot(2) = startAlpha;
@@ -121,21 +112,25 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose & startPose, const Pose
             currRot += rotVel;
         }
 
-        std::vector<Vector3d>::iterator posIT = posTra.begin();
-        std::vector<Vector3d>::iterator velIT = velTra.begin();
-        std::vector<Vector3d>::iterator rotIT = rotTra.begin();
-
-        for (posIT; posIT != posTra.end(); ++posIT, ++velIT, ++rotIT) {
-            if (!solver.solveIK(*posIT, *rotIT, currJntAng, configuration)) {
+        for (size_t i = 0; i < posTra.size(); ++i) {
+            if (!solver.solveIK(posTra[i], rotTra[i], currJntAng, configuration)) {
                 ROS_WARN_STREAM("Solution is not found at configuration: " << configuration);
-                err = true; 
+                err = true;
                 break;
             }
             makeYoubotArmOffsets(currJntAng);
 
+            anglesDiff = currJntAng - prevAngles;
+            if (i > 0 && anglesDiff(1) > 0.03) {
+                for (size_t j = 0; j <= i - 1; ++j) {
+                    qTra[j] += anglesDiff;
+                }
+            }
+            
             qTra.push_back(currJntAng);
+            prevAngles = currJntAng;
         }
-
+        ROS_INFO_STREAM("LOL");
         if (err == true) continue;
 
         std::vector<JointValues>::iterator pp = qTra.begin() - 1;

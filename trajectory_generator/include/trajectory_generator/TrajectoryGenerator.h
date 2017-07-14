@@ -11,7 +11,7 @@ class Trajectory {
         ~Trajectory();
 
         void calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep);
-        void convertWorkSpaceToJointSpace(const Pose & startPose, const Pose & endPose, const double timeStep);
+        void convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, const double timeStep);
         void generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajectory);
         void exponencialMovingAvarage(std::vector<JointValues> & data, std::vector<JointValues> & movingAvarage, const double alpha);
 
