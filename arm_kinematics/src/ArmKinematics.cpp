@@ -210,8 +210,8 @@ Vector3d ArmKinematics::transformFromFrame5ToFrame0(const JointValues & jointAng
     double phi5 = jointAngles(4);
 
     // xz-plane shift
-    double dx = d2*sin(jointAngles(1)) + d3*sin(jointAngles(1) + jointAngles(2)) + (d4 - 0.105)*sin(alpha) + d1x;
-    double dz = d2*cos(jointAngles(1)) + d3*cos(jointAngles(1) + jointAngles(2)) + (d4 - 0.105)*cos(alpha) + d1z;
+    double dx = d2*sin(jointAngles(1)) + d3*sin(jointAngles(1) + jointAngles(2)) + d4*sin(alpha) + d1x;
+    double dz = d2*cos(jointAngles(1)) + d3*cos(jointAngles(1) + jointAngles(2)) + d4*cos(alpha) + d1z;
 
     // x-coordinate
     resultPosition(0) = (cos(alpha)*cos(phi1)*cos(phi5) - sin(phi1)*sin(phi5)) * position(0)
