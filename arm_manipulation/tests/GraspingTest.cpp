@@ -12,6 +12,13 @@
 
 #include <manipulation_control_node/GraspingArmPositions.h>
 
+size_t checkContainerContents(std::pair<std::vector<bool>, std::vector<Pose> > & container)
+{   
+    for (size_t i = 0; i < 3; ++i) {
+        if (!container.first[i]) return i;
+    }
+    return -1;
+}
 
 int main(int argc, char *argv[])
 {
@@ -69,74 +76,105 @@ int main(int argc, char *argv[])
     thirdContainerPoint.orientation(1) = 0;
     thirdContainerPoint.orientation(2) = -3.1415;
 
+    std::vector<bool> objectContaind = {false, false, false};
+    std::vector<Pose> containersPose = {firstContainerPoint, secondContainerPoint, thirdContainerPoint};
+    std::pair<std::vector<bool>, std::vector<Pose>> objectContainer = std::make_pair(objectContaind, containersPose);
+
     std::string answer;
     std::cout << "Start grasping test? (y, n): "; std::cin >> answer;
 
     /* EXECUTION */
 
     if (answer == "y") {
-        // Messages
-        red_msgs::CameraTask task;
-        Pose recognizedObjectPose;
-        arm_kinematics::CertesianPose armPose;
-        armPose.position.resize(3);
-        armPose.orientation.resize(3);
-        ArmKinematics solver;
-        JointValues currentJointAngles;
 
-        arm_kinematics::ManipulatorPose manipulatorPose;
-        armPose.position[0] = initialPoseForRecognized.position(0);
-        armPose.position[1] = initialPoseForRecognized.position(1);
-        armPose.position[2] = initialPoseForRecognized.position(2);
-        armPose.orientation[0] = initialPoseForRecognized.orientation(0);
-        armPose.orientation[1] = initialPoseForRecognized.orientation(1);
-        armPose.orientation[2] = initialPoseForRecognized.orientation(2);
-        manipulatorPose.request.pose = armPose;
+        ROS_INFO_STREAM("Search free container.");
+        size_t containerNumber = checkContainerContents(objectContainer);
+        ROS_INFO_STREAM("Container number: " << containerNumber);
 
-        if (moveToPoseClient.call(manipulatorPose)) ROS_INFO_STREAM("Go to initial pose.");
-        else {
-            ROS_FATAL_STREAM("Cant go to initial position");
-            return false;
-        }
-        ros::Duration(2).sleep();
-        solver.solveFullyIK(initialPoseForRecognized, currentJointAngles);
+        while (containerNumber != -1 && nh.ok()) {
+            // Messages
+            red_msgs::CameraTask task;
+            Pose recognizedObjectPose;
+            arm_kinematics::CertesianPose armPose;
+            armPose.position.resize(3);
+            armPose.orientation.resize(3);
+            ArmKinematics solver;
+            JointValues currentJointAngles;
 
-        ROS_INFO_STREAM("Turn ON camera.");
-        ROS_INFO_STREAM("Reading data from camera.");
-        task.request.mode = 1;
-        task.request.shape = "";
-        do {
-            cameraTaskClient.call(task);
-        } while (task.response.list.empty() && nh.ok());
+            arm_kinematics::ManipulatorPose manipulatorPose;
+            armPose.position[0] = initialPoseForRecognized.position(0);
+            armPose.position[1] = initialPoseForRecognized.position(1);
+            armPose.position[2] = initialPoseForRecognized.position(2);
+            armPose.orientation[0] = initialPoseForRecognized.orientation(0);
+            armPose.orientation[1] = initialPoseForRecognized.orientation(1);
+            armPose.orientation[2] = initialPoseForRecognized.orientation(2);
+            manipulatorPose.request.pose = armPose;
 
-        recognizedObjectPose.position(0) = task.response.list[0].coordinates_center_frame[0] + cameraOffsetX;
-        recognizedObjectPose.position(1) = task.response.list[0].coordinates_center_frame[1] + cameraOffsetY;
-        recognizedObjectPose.position(2) = task.response.list[0].coordinates_center_frame[2] + cameraOffsetZ;
-        recognizedObjectPose.orientation(0) = 0;
-        recognizedObjectPose.orientation(1) = task.response.list[0].orientation[1];
-        recognizedObjectPose.orientation(2) = 3.1415;
+            if (moveToPoseClient.call(manipulatorPose)) ROS_INFO_STREAM("Go to initial pose.");
+            else {
+                ROS_FATAL_STREAM("Cant go to initial position");
+                return false;
+            }
+            ros::Duration(2).sleep();
+            solver.solveFullyIK(initialPoseForRecognized, currentJointAngles);
 
-        ROS_INFO_STREAM("[Control Node] Recognized object position: (" 
-            << recognizedObjectPose.position(0) << ", "
-            << recognizedObjectPose.position(1) << ", " 
-            << recognizedObjectPose.position(2) << ")\t"
-            << "angle: " << recognizedObjectPose.orientation(1));
+            ROS_INFO_STREAM("Turn ON camera.");
+            ROS_INFO_STREAM("Reading data from camera.");
+            task.request.mode = 1;
+            task.request.shape = "";
+            do {
+                cameraTaskClient.call(task);
+            } while (task.response.list.empty() && nh.ok());
 
-        Vector3d objectoPoseFromBase = solver.transformFromFrame5ToFrame0(currentJointAngles, recognizedObjectPose.position);
-        recognizedObjectPose.position = objectoPoseFromBase;
+            recognizedObjectPose.position(0) = task.response.list[0].coordinates_center_frame[0] + cameraOffsetX;
+            recognizedObjectPose.position(1) = task.response.list[0].coordinates_center_frame[1] + cameraOffsetY;
+            recognizedObjectPose.position(2) = task.response.list[0].coordinates_center_frame[2] + cameraOffsetZ;
+            recognizedObjectPose.orientation(0) = 0;
+            recognizedObjectPose.orientation(1) = task.response.list[0].orientation[1];
+            recognizedObjectPose.orientation(2) = 3.1415;
 
-        // TO DO add object height
-        // Grasp object
-        for (size_t i = 0; i < 3; ++i) {
-            armPose.position[i] = recognizedObjectPose.position(i);
-            armPose.orientation[i] = recognizedObjectPose.orientation(i);
-        }
-        manipulatorPose.request.pose = armPose;
-        ROS_INFO_STREAM("Grasp the object.");
-        if (graspObjectClient.call(manipulatorPose)) ROS_INFO_STREAM("Successfull grasp the object");
-        else {
-            ROS_FATAL_STREAM("Cant got to camera position.");
-            return false;
+            ROS_INFO_STREAM("[Control Node] Recognized object position: (" 
+                << recognizedObjectPose.position(0) << ", "
+                << recognizedObjectPose.position(1) << ", " 
+                << recognizedObjectPose.position(2) << ")\t"
+                << "angle: " << recognizedObjectPose.orientation(1));
+
+            Vector3d objectoPoseFromBase = solver.transformFromFrame5ToFrame0(currentJointAngles, recognizedObjectPose.position);
+            recognizedObjectPose.position = objectoPoseFromBase;
+
+            // TO DO add object height
+            // Grasp object
+            for (size_t i = 0; i < 3; ++i) {
+                armPose.position[i] = recognizedObjectPose.position(i);
+                armPose.orientation[i] = recognizedObjectPose.orientation(i);
+            }
+            manipulatorPose.request.pose = armPose;
+            ROS_INFO_STREAM("Grasp the object.");
+            if (graspObjectClient.call(manipulatorPose)) ROS_INFO_STREAM("Successfull grasp the object");
+            else {
+                ROS_FATAL_STREAM("Cant got to camera position.");
+                return false;
+            }
+
+            /*// Put object
+            for (size_t i = 0; i < 3; ++i) {
+                armPose.position[i] = objectContainer.second[containerNumber].position(i);
+                armPose.orientation[i] = objectContainer.second[containerNumber].orientation(i);
+            }
+            manipulatorPose.request.pose = armPose;
+
+            ROS_INFO_STREAM("Put the object.");
+            if (graspObjectClient.call(manipulatorPose)) ROS_INFO_STREAM("Turn ON camera.");
+            else {
+                ROS_FATAL_STREAM("Cant got to camera position.");
+                return false;
+            }*/
+            objectContainer.first[containerNumber] = true;
+
+            ROS_INFO_STREAM("Search free container.");
+            containerNumber = checkContainerContents(objectContainer);
+            ROS_INFO_STREAM("Container number: " << containerNumber);
+
         }
     }
 }
