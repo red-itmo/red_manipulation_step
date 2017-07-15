@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     trajectory_msgs
     trajectory_generator
+    local_task_planner
 )
 
 catkin_package()
@@ -31,14 +32,19 @@ add_executable(move_gripper tests/move_gripper.cpp src/youbot_manipulator.cpp)
 target_link_libraries(move_gripper
     ${catkin_LIBRARIES}
 )
-add_executable(translation_test tests/translationTest.cpp)
-target_link_libraries(translation_test
+add_executable(camera_calibration tests/CameraCalibration.cpp)
+target_link_libraries(camera_calibration
     ${catkin_LIBRARIES}
 )
 add_executable(trajectory_test tests/trajectory_test.cpp src/youbot_manipulator.cpp)
 target_link_libraries(trajectory_test
     ${catkin_LIBRARIES}
 )
+add_executable(grasping_test tests/GraspingTest.cpp)
+target_link_libraries(grasping_test
+    ${catkin_LIBRARIES}
+)
+
 
 add_executable(move_by_camera src/move_by_camera.cpp src/youbot_manipulator.cpp)
 target_link_libraries(move_by_camera

@@ -1,8 +1,8 @@
 <launch>
 	<node 
 		pkg = "arm_manipulation"
-		type = "move_by_camera"
-		name = "move_by_camera"
+		type = "grasping_test"
+		name = "grasping_test"
 		output = "screen"
 	>
 		<param name="camera_offset_x" type="double" value="0.0262079" />
