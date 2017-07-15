@@ -7,8 +7,8 @@ int main(int argc, char ** argv)
 
     YoubotManipulator manipulator(nh);
 
-    manipulator.moveArmLoop();
     ROS_INFO_STREAM("[Move by camera] Start Work.");
+    manipulator.moveArmLoop();
 
     return 0;
 }

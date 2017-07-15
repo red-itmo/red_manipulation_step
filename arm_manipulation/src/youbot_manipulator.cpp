@@ -44,8 +44,8 @@ void YoubotManipulator::moveArm(const Pose & pose)
     
     if (solver.solveFullyIK(pose, jointAngles)) {
         // Convert joint values
-        pos = solver.transformFromFrame5ToFrame0(jointAngles, zeros);
-        ROS_INFO_STREAM("Forw. Kin. Pos.: (" << pos(0) << ", " << pos(1) << ", " << pos(2) << ")");
+        // pos = solver.transformFromFrame5ToFrame0(jointAngles, zeros);
+        // ROS_INFO_STREAM("Forw. Kin. Pos.: (" << pos(0) << ", " << pos(1) << ", " << pos(2) << ")");
         makeYoubotArmOffsets(jointAngles);
         jointPositions = createArmPositionMsg(jointAngles);
         ROS_INFO_STREAM("[Arm Manipulation] Sending command...");
@@ -206,6 +206,7 @@ void YoubotManipulator::moveArmLoop()
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /manipulator_pose...");
     poseServer = nh.advertiseService("manipulator_pose", &YoubotManipulator::goToPose, this);
 
+    initArmTopics();
     initActionClient(maxAccel, maxVel);
     
     while(nh.ok()) {
