@@ -43,28 +43,28 @@ int main(int argc, char *argv[])
     /////////////////////// INITIAL POSE FOR RECOGNIZED
     initialPoseForRecognized.position(0) = 0.3;
     initialPoseForRecognized.position(1) = 0.0;
-    initialPoseForRecognized.position(2) = 0.5;
+    initialPoseForRecognized.position(2) = 0.6;
 
     /////////////////////// FIRST CONTAINER POINT
-    firstContainerPoint.position(0) = -0.3;
+    firstContainerPoint.position(0) = -0.35;
     firstContainerPoint.position(1) = 0;
-    firstContainerPoint.position(2) = -0.005;
+    firstContainerPoint.position(2) = -0.02;
     firstContainerPoint.orientation(0) = 0;
     firstContainerPoint.orientation(1) = 0;
     firstContainerPoint.orientation(2) = -3.1415;
 
     /////////////////////// SECOND CONTAINER POINT
-    secondContainerPoint.position(0) = -0.25;
-    secondContainerPoint.position(1) = -0.1;
-    secondContainerPoint.position(2) = -0.005;
+    secondContainerPoint.position(0) = -0.35;
+    secondContainerPoint.position(1) = 0.1;
+    secondContainerPoint.position(2) = -0.02;
     secondContainerPoint.orientation(0) = 0;
     secondContainerPoint.orientation(1) = 0;
     secondContainerPoint.orientation(2) = -3.1415;
 
     /////////////////////// THIRD CONTAINER POINT
-    thirdContainerPoint.position(0) = -0.25;
-    thirdContainerPoint.position(1) = 0.1;
-    thirdContainerPoint.position(2) = -0.005;
+    thirdContainerPoint.position(0) = -0.35;
+    thirdContainerPoint.position(1) = -0.1;
+    thirdContainerPoint.position(2) = -0.02;
     thirdContainerPoint.orientation(0) = 0;
     thirdContainerPoint.orientation(1) = 0;
     thirdContainerPoint.orientation(2) = -3.1415;
