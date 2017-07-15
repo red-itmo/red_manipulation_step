@@ -142,11 +142,11 @@ bool YoubotManipulator::graspObject(arm_kinematics::ManipulatorPose::Request & r
     }
     
     moveArm(startPose);
-    moveGripper(0.0115);
+    moveGripper(0.0);
     ros::Duration(2).sleep();
 
     moveToLineTrajectory(startPose, endPose);
-    moveGripper(0.0);
+    moveGripper(0.0115);
     ros::Duration(2).sleep();
    
     res.feasible = true;
