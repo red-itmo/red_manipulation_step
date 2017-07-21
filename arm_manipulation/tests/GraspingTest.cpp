@@ -9,6 +9,7 @@
 #include <red_msgs/CameraTask.h>
 #include <red_msgs/CameraStop.h>
 #include <red_msgs/ManipulationObjects.h>
+#include <red_msgs/GetRange.h>
 
 #include <manipulation_control_node/GraspingArmPositions.h>
 
@@ -46,6 +47,9 @@ int main(int argc, char *argv[])
 
     ROS_INFO_STREAM("[Grasp T] ServiceClient: /manipulator_pose...");
     ros::ServiceClient moveToPoseClient = nh.serviceClient<arm_kinematics::ManipulatorPose>("/manipulator_pose");
+
+    ROS_INFO_STREAM("[Grasp T] ServiceClient: /get_range...");
+    ros::ServiceClient rangefinderClient = nh.serviceClient<red_msgs::GetRange>("/get_range");
 
     /////////////////////// INITIAL POSE FOR RECOGNIZED
     initialPoseForRecognized.position(0) = 0.3;
@@ -87,19 +91,23 @@ int main(int argc, char *argv[])
 
     if (answer == "y") {
 
+        // Messages
+        red_msgs::CameraTask task;
+        red_msgs::GetRange range;
+        Pose recognizedObjectPose;
+        arm_kinematics::CertesianPose armPose;
+        armPose.position.resize(3);
+        armPose.orientation.resize(3);
+        ArmKinematics solver;
+        JointValues currentJointAngles;
+
+        double distance = 0;
+
         ROS_INFO_STREAM("Search free container.");
         size_t containerNumber = checkContainerContents(objectContainer);
         ROS_INFO_STREAM("Container number: " << containerNumber);
 
         while (containerNumber != -1 && nh.ok()) {
-            // Messages
-            red_msgs::CameraTask task;
-            Pose recognizedObjectPose;
-            arm_kinematics::CertesianPose armPose;
-            armPose.position.resize(3);
-            armPose.orientation.resize(3);
-            ArmKinematics solver;
-            JointValues currentJointAngles;
 
             arm_kinematics::ManipulatorPose manipulatorPose;
             armPose.position[0] = initialPoseForRecognized.position(0);
@@ -118,10 +126,19 @@ int main(int argc, char *argv[])
             ros::Duration(2).sleep();
             solver.solveFullyIK(initialPoseForRecognized, currentJointAngles);
 
+            if (rangefinderClient.call(range)) ROS_INFO_STREAM("Measuring distance.");
+            else {
+                ROS_WARN_STREAM("Cant read data from rangefinder.");
+            }
+            // distance = rf.getRange();
+            distance = range.response.distance;
+            ROS_INFO_STREAM("Distance : " << distance);
+
             ROS_INFO_STREAM("Turn ON camera.");
             ROS_INFO_STREAM("Reading data from camera.");
             task.request.mode = 1;
             task.request.shape = "";
+            task.request.distance = distance;
             do {
                 cameraTaskClient.call(task);
             } while (task.response.list.empty() && nh.ok());
@@ -156,7 +173,7 @@ int main(int argc, char *argv[])
                 return false;
             }
 
-            /*// Put object
+            // Put object
             for (size_t i = 0; i < 3; ++i) {
                 armPose.position[i] = objectContainer.second[containerNumber].position(i);
                 armPose.orientation[i] = objectContainer.second[containerNumber].orientation(i);
@@ -168,7 +185,7 @@ int main(int argc, char *argv[])
             else {
                 ROS_FATAL_STREAM("Cant got to camera position.");
                 return false;
-            }*/
+            }
             objectContainer.first[containerNumber] = true;
 
             ROS_INFO_STREAM("Search free container.");
