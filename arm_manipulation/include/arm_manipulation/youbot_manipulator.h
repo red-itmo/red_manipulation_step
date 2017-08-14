@@ -60,7 +60,9 @@ class YoubotManipulator
         double cameraOffsetX, cameraOffsetY, cameraOffsetZ;
 
         // Callbacs
-        bool graspObject(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
+        bool graspObject(const Pose & p);
+        bool putObject(const Pose & p);
         bool goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
+        bool trajectoryMove(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
 };
 #endif

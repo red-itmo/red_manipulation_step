@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     trajectory_msgs
     trajectory_generator
-    local_task_planner
 )
 
 catkin_package()
