@@ -1,3 +1,4 @@
 CertesianPose pose
+int8 task
 ---
 bool feasible
