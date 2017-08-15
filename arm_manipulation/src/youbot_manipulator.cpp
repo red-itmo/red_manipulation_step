@@ -135,11 +135,11 @@ bool YoubotManipulator::graspObject(const Pose & p)
     }
 
     moveArm(startPose);
-    moveGripper(0.0);
+    moveGripper(0.0115);
     ros::Duration(2).sleep();
 
     moveToLineTrajectory(startPose, endPose);
-    moveGripper(0.0115);
+    moveGripper(0.0);
     ros::Duration(2).sleep();
 
     return true;
@@ -170,7 +170,7 @@ bool YoubotManipulator::putObject(const Pose & p)
     ros::Duration(2).sleep();
 
     moveToLineTrajectory(startPose, endPose);
-    moveGripper(0);
+    moveGripper(0.0115);
     ros::Duration(1).sleep();
 
     return true;
@@ -214,7 +214,6 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     jointPositions = createArmPositionMsg(startAngles);
     armPublisher.publish(jointPositions);
     ros::Duration(2).sleep();
-
 
     if (!gen.trajectory.points.empty())
     {
