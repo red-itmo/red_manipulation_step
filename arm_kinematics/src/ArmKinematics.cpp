@@ -15,8 +15,8 @@ bool ArmKinematics::solveSpaceIK(Vector3d & position, matrix::Matrix<double, 3, 
     dz = position(2) - d0z;
 
     jointAngles(0) = atan2(position(1), dx);
-    if (jointAngles(0) > M_PI/2) jointAngles(0) -= M_PI;
-    else if (jointAngles(0) < -M_PI/2) jointAngles(0) += M_PI;
+    // if (jointAngles(0) > M_PI/2) jointAngles(0) -= M_PI;
+    // else if (jointAngles(0) < -M_PI/2) jointAngles(0) += M_PI;
 
     alpha = atan2(orientation(0, 2)*cos(jointAngles(0)) + orientation(1, 2)*sin(jointAngles(0)), orientation(2, 2));
     jointAngles(4) = atan2(
