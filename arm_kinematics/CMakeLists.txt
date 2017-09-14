@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(arm_kinematics)
 
+add_compile_options(-std=c++11)
+
 find_package(catkin REQUIRED COMPONENTS 
   roscpp
   std_msgs
-	message_generation)
+  message_generation
+)
 
 ################################################
 ## Declare ROS messages, services and actions ##
