@@ -26,6 +26,7 @@ class YoubotManipulator
         ~YoubotManipulator();
 
         void moveArm(const Pose & pose);
+        void moveArm(const JointValues & angles);
         void moveGripper(double jointValue);
 
         void moveToLineTrajectory(const Pose & startPose, const Pose & endPose);

@@ -33,6 +33,15 @@ void YoubotManipulator::initActionClient(const double aMax, const double vMax)
         << " Max Accel.: " << maxAccel);
 }
 
+void YoubotManipulator::moveArm(const JointValues & angles) 
+{
+    brics_actuator::JointPositions jointPositions;
+    if (checkAngles(angles)) {
+        jointPositions = createArmPositionMsg(angles);
+        armPublisher.publish(jointPositions);
+        ros::Duration(2).sleep();
+    }
+}
 void YoubotManipulator::moveArm(const Pose & pose)
 {
     brics_actuator::JointPositions jointPositions;
@@ -47,10 +56,7 @@ void YoubotManipulator::moveArm(const Pose & pose)
         // pos = solver.transformFromFrame5ToFrame0(jointAngles, zeros);
         // ROS_INFO_STREAM("Forw. Kin. Pos.: (" << pos(0) << ", " << pos(1) << ", " << pos(2) << ")");
         makeYoubotArmOffsets(jointAngles);
-        jointPositions = createArmPositionMsg(jointAngles);
-        ROS_INFO_STREAM("[Arm Manipulation] Sending command...");
-        armPublisher.publish(jointPositions);
-        ros::Duration(2).sleep();
+        moveArm(jointAngles);
     }
     else ROS_ERROR_STREAM("[Arm Manipulation] Solution NOT found!");
 }
