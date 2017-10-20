@@ -253,3 +253,10 @@ void makeKinematicModelOffsets(JointValues & jointAngles)
     jointAngles(3) -= jointOffsets[3];
     jointAngles(4) = jointOffsets[4] - jointAngles(4);
 }
+
+bool checkAngles(const JointValues & jointAngles) {
+    for (size_t i = 0; i < DOF; ++i) {
+        if (jointMinAngles[i] > jointAngles(i) && jointMaxAngles[i] < jointAngles(i)) 
+            return false;
+    }
+}
