@@ -1,6 +1,8 @@
 #ifndef KINEMATIC_CONSTANTS
 #define KINEMATIC_CONSTANTS
 
+const size_t DOF = 5;
+
 // Youbot manipulator parameters from URDF file
 const double d0x = 0.024;
 const double d0z = 0.096;
