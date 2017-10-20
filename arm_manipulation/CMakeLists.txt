@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     trajectory_msgs
     trajectory_generator
+    red_msgs
 )
 
 catkin_package()
@@ -45,7 +46,6 @@ add_executable(grasping_test tests/GraspingTest.cpp)
 target_link_libraries(grasping_test
     ${catkin_LIBRARIES}
 )
-
 
 add_executable(move_by_camera src/move_by_camera.cpp src/youbot_manipulator.cpp)
 target_link_libraries(move_by_camera
