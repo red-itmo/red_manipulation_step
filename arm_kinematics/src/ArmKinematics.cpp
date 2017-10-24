@@ -259,4 +259,5 @@ bool checkAngles(const JointValues & jointAngles) {
         if (jointMinAngles[i] > jointAngles(i) && jointMaxAngles[i] < jointAngles(i)) 
             return false;
     }
+    return true;
 }
