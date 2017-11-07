@@ -45,6 +45,8 @@ class YoubotManipulator
         ros::Publisher armPublisher;
         ros::Publisher gripperPublisher;
 
+        ros::Subscriber stateSubscriber;
+
         // Kinematic constansts for trajectory control, lr - youbot_driver rate
         double maxVel, maxAccel, lr;
 
@@ -57,13 +59,15 @@ class YoubotManipulator
         // Service for manipulator to move to angles
         ros::ServiceServer poseServer;
 
-        // Camera offset
-        double cameraOffsetX, cameraOffsetY, cameraOffsetZ;
+        JointValues stateValues;
 
         // Callbacs
         bool graspObject(const Pose & p);
         bool putObject(const Pose & p);
         bool goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
         bool trajectoryMove(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
+        void stateCallback(const sensor_msgs::JointStatePtr & msg);
+        bool checkAchievementOfPosition(const JointValues & desiredValues);
+
 };
 #endif
