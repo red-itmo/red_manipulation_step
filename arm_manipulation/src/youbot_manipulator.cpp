@@ -17,8 +17,8 @@ void YoubotManipulator::initArmTopics()
     armPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/arm_controller/position_command", 1);
     ROS_INFO_STREAM("[Arm Manipulation] Publisher: arm_1/gripper_controller/position_command...");
     gripperPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/gripper_controller/position_command", 1);
-    ROS_INFO_STREAM("[Arm Manipulation] Subsciber: arm_1/joint_state...");
-    stateSubscriber = nh.subscribe("/arm_1/joint_state/", 10, &YoubotManipulator::stateCallback, this);
+    ROS_INFO_STREAM("[Arm Manipulation] Subsciber: arm_1/joint_states...");
+    stateSubscriber = nh.subscribe("/arm_1/joint_states", 10, &YoubotManipulator::stateCallback, this);
 }
 
 void YoubotManipulator::initActionClient(const double aMax, const double vMax)
@@ -118,10 +118,12 @@ bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredVa
             for (size_t i = 0; i < DOF; ++i) {
                 notChange = notChange && (currentValues(i) == stateValues(i));
             }
-        } while(notChange);
+        } while(notChange && nh.ok());
         currentValues = stateValues;
         diff = desiredValues - currentValues;
-    } while (diff.norm() > 0.01);
+    } while (diff.norm() > 0.01 && nh.ok());
+
+    return true;
 }
 
 void YoubotManipulator::stateCallback(const sensor_msgs::JointStatePtr & msg) {
