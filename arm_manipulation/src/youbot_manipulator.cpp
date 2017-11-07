@@ -148,6 +148,9 @@ bool YoubotManipulator::graspObject(const Pose & p)
     moveGripper(0.0);
     ros::Duration(2).sleep();
 
+    // move up
+    moveToLineTrajectory(endPose, startPose);
+
     return true;
 }
 
@@ -179,6 +182,7 @@ bool YoubotManipulator::putObject(const Pose & p)
     moveGripper(0.0115);
     ros::Duration(1).sleep();
 
+    moveToLineTrajectory(endPose, startPose);
     return true;
 }
 

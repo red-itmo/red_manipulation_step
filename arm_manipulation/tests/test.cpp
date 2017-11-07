@@ -24,7 +24,7 @@ int main(int argc, char ** argv)
             manipulator.moveArm(pose);
         }
         if (answer == "Angle") {
-            std::cout << "Joint Angles (q1 - q5): "; std::cin >> angles(0) >> angles(1) >> angles(2) >> angles(3) >> angles(4) >> angles(5);
+            std::cout << "Joint Angles (q1 - q5): "; std::cin >> angles(0) >> angles(1) >> angles(2) >> angles(3) >> angles(4);
             manipulator.moveArm(angles);
         }
         std::cout << "------------------------------------------" << std::endl;
