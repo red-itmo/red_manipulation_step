@@ -17,6 +17,8 @@ void YoubotManipulator::initArmTopics()
     armPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/arm_controller/position_command", 1);
     ROS_INFO_STREAM("[Arm Manipulation] Publisher: arm_1/gripper_controller/position_command...");
     gripperPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/gripper_controller/position_command", 1);
+    ROS_INFO_STREAM("[Arm Manipulation] Subsciber: arm_1/joint_state...");
+    stateSubscriber = nh.subscribe("/arm_1/joint_state/", 10, &YoubotManipulator::stateCallback, this);
 }
 
 void YoubotManipulator::initActionClient(const double aMax, const double vMax)
@@ -39,7 +41,10 @@ void YoubotManipulator::moveArm(const JointValues & angles)
     if (checkAngles(angles)) {
         jointPositions = createArmPositionMsg(angles);
         armPublisher.publish(jointPositions);
-        ros::Duration(2).sleep();
+        ros::Duration(1).sleep();
+        if (!checkAchievementOfPosition(angles)) {
+            ROS_WARN("Position is not desired!");
+        }
     }
 }
 void YoubotManipulator::moveArm(const Pose & pose)
@@ -104,6 +109,26 @@ brics_actuator::JointPositions createGripperPositionMsg(double jointValue)
     return jointPositions;
 }
 
+bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredValues) {
+    JointValues currentValues, diff;
+    bool notChange = true;
+    do {
+        do {
+            ros::spinOnce();
+            for (size_t i = 0; i < DOF; ++i) {
+                notChange = notChange && (currentValues(i) == stateValues(i));
+            }
+        } while(notChange);
+        currentValues = stateValues;
+        diff = desiredValues - currentValues;
+    } while (diff.norm() > 0.01);
+}
+
+void YoubotManipulator::stateCallback(const sensor_msgs::JointStatePtr & msg) {
+    for (size_t i = 0; i < DOF; ++i) {
+        stateValues(i) = msg->position[i];
+    }
+}
 bool YoubotManipulator::goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res)
 {
     Pose pose;
