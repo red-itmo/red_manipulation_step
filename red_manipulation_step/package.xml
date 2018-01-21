@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package>
+	<name>red_manipulation_step</name>
+	<version>1.0.0</version>
+	<description>A metapackage that realize manipulator work</description>
+	<maintainer email="senserlex@gmail.com">Ovcharov Alexey</maintainer>
+	<license>BSD</license>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<export>
+		<metapackage/>
+	</export>
+</package>

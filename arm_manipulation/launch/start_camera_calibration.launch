@@ -2,7 +2,7 @@
 
 	<node 
 		pkg = "arm_manipulation"
-		type = "translation_test"
+		type = "camera_calibration"
 		name = "calibr_cam_pos"
 		output = "screen"
 	>

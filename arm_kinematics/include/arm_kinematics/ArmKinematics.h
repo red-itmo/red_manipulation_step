@@ -8,6 +8,7 @@
 
 void makeYoubotArmOffsets(JointValues & jointAngles);
 void makeKinematicModelOffsets(JointValues & jointAngles);
+bool checkAngles(const JointValues & jointAngles);
 
 class ArmKinematics {
 
