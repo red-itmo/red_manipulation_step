@@ -7,12 +7,13 @@ TrajectoryGenerator::TrajectoryGenerator(const double maxVel, const double maxAc
 TrajectoryGenerator::~TrajectoryGenerator()
 {}
 
-void TrajectoryGenerator::calculateTrajectory(const Pose & startPose, const Pose & endPose)
+std::vector<JointValues> TrajectoryGenerator::calculateTrajectory(const Pose & startPose, const Pose & endPose)
 {
 	Trajectory traj;
     traj.calculateWorkSpaceTrajectory(maxVelocity, maxAcceleration, startPose, endPose, timeStep);
     traj.convertWorkSpaceToJointSpace(startPose, endPose, timeStep);
     traj.generateTrajectoryMsg(trajectory);
+    return traj.qTra;
 }
 
 void TrajectoryGenerator::setMaxVelocity(const double maxVel)

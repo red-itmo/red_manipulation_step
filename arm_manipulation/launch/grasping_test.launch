@@ -1,12 +1,20 @@
 <launch>
+	<param name="simulation" type="bool" value="true" />
+	<node
+		pkg = "arm_manipulation"
+		type = "move_by_camera"
+		name = "move_by_camera"
+		output = "screen">
+		
+	</node>
 	<node 
 		pkg = "arm_manipulation"
 		type = "grasping_test"
 		name = "grasping_test"
 		output = "screen"
 	>
-		<param name="camera_offset_x" type="double" value="0.0884489" />
+		<!-- <param name="camera_offset_x" type="double" value="0.0884489" />
 		<param name="camera_offset_y" type="double" value="0.0147709" />
-		<param name="camera_offset_z" type="double" value="-0.016" />
+		<param name="camera_offset_z" type="double" value="-0.016" /> -->
 	</node>
 </launch>
