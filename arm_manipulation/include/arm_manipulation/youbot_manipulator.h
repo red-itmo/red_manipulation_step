@@ -16,7 +16,7 @@
 typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> ActionClent;
 
 // Message generation
-brics_actuator::JointPositions createArmPositionMsg(JointValues jointAngles);
+brics_actuator::JointPositions createArmPositionMsg(const JointValues & jointAngles);
 brics_actuator::JointPositions createGripperPositionMsg(double jointValue);
 
 class YoubotManipulator
@@ -25,15 +25,15 @@ class YoubotManipulator
         YoubotManipulator(ros::NodeHandle & nodeHandle);
         ~YoubotManipulator();
 
-        void moveArm(const Pose & pose);
-        void moveArm(const JointValues & angles);
+        bool moveArm(const Pose & pose);
+        bool moveArm(const JointValues & angles);
         void moveGripper(double jointValue);
 
         void moveToLineTrajectory(const Pose & startPose, const Pose & endPose);
         void moveArmLoop();
 
         void initArmTopics();
-        void initActionClient(const double aMax, const double vMax);
+        void initActionClient(const double aMax, const double vMax, const double timeStep);
 
     private:
         ros::NodeHandle nh;
@@ -48,7 +48,8 @@ class YoubotManipulator
         ros::Subscriber stateSubscriber;
 
         // Kinematic constansts for trajectory control, lr - youbot_driver rate
-        double maxVel, maxAccel, lr;
+        double maxVel, maxAccel, lr, timeStep;
+        bool sim;//simulation control
 
         // Trajectory action client
         ActionClent * trajectoryAC;
