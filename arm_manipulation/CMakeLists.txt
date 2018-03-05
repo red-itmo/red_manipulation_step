@@ -26,36 +26,38 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(test_manipulation tests/test.cpp src/youbot_manipulator.cpp)
-target_link_libraries(test_manipulation
-    ${catkin_LIBRARIES}
-)
-add_executable(move_gripper tests/move_gripper.cpp src/youbot_manipulator.cpp)
-target_link_libraries(move_gripper
-    ${catkin_LIBRARIES}
-)
+add_executable(test_manipulation tests/test.cpp)
+add_executable(move_gripper tests/move_gripper.cpp)
 add_executable(camera_calibration tests/CameraCalibration.cpp)
-target_link_libraries(camera_calibration
-    ${catkin_LIBRARIES}
-)
-add_executable(trajectory_test tests/trajectory_test.cpp src/youbot_manipulator.cpp)
-target_link_libraries(trajectory_test
-    ${catkin_LIBRARIES}
-)
+add_executable(trajectory_test tests/trajectory_test.cpp)
 add_executable(grasping_test tests/GraspingTest.cpp)
-target_link_libraries(grasping_test
-    ${catkin_LIBRARIES}
-)
-
-add_executable(move_by_camera src/move_by_camera.cpp src/youbot_manipulator.cpp)
-target_link_libraries(move_by_camera
-    ${catkin_LIBRARIES}
-)
+add_executable(move_by_camera src/move_by_camera.cpp)
 
 add_library(youbot_manipulator
     src/youbot_manipulator.cpp
+    src/TrajectoryMove_fn.cpp
 )
-target_link_libraries(youbot_manipulator
+target_link_libraries(move_gripper
+    youbot_manipulator
     ${catkin_LIBRARIES}
-    ${Boost_LIBRARIES}
 )
+target_link_libraries(test_manipulation
+    youbot_manipulator
+    ${catkin_LIBRARIES}
+)
+target_link_libraries(trajectory_test
+    youbot_manipulator
+    ${catkin_LIBRARIES}
+)
+target_link_libraries(camera_calibration
+    ${catkin_LIBRARIES}
+)
+target_link_libraries(grasping_test
+    ${catkin_LIBRARIES}
+)
+target_link_libraries(move_by_camera
+    youbot_manipulator
+    ${catkin_LIBRARIES}
+)
+
+

@@ -26,7 +26,7 @@ class TrajectoryGenerator {
         TrajectoryGenerator(const double maxVel, const double maxAccel, const double dt);
         ~TrajectoryGenerator();
 
-        void calculateTrajectory(const Pose & startPose, const Pose & endPose);
+        std::vector<JointValues> calculateTrajectory(const Pose & startPose, const Pose & endPose);
 
         void setMaxVelocity(const double maxVel);
         void setMaxAcceleration(const double maxAccel);
