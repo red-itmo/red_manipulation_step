@@ -160,7 +160,7 @@ void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, cons
 
 		std::vector<JointValues>::iterator pp = qTra.begin() - 1;
 		std::vector<JointValues>::iterator np = qTra.begin() + 1;
-
+		
 		for (std::vector<JointValues>::iterator cp = qTra.begin(); cp != qTra.end(); ++cp) {
 			if (pp == qTra.begin() - 1) {
 				prevAngles = *cp;

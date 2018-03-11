@@ -26,15 +26,15 @@ int main(int argc, char  ** argv)
       {
         ROS_WARN("[Arm Manipulation]No param '/trajectory_test/v_m', setting 0.05");
       }
-    nh.param("/trajectory_test/time_step", timeStep, 0.2);    // TODO
+    nh.param("/trajectory_test/time_step", timeStep, 0.2);    
     if (!nh.hasParam("/trajectory_test/time_step"))
       {
         ROS_WARN("[Arm Manipulation]No param '/trajectory_test/time_step', setting 0.2");
       }
 
     std::vector<Pose> startPoses;
-    double xMin = 0.4, xMax = 0.41;
-    double yMin = -0.1, yMax = 0.1;
+    double xMin = 0.35, xMax = 0.35;
+    double yMin = -0.2, yMax = 0.1;
     double step = 0.05; 
     Pose p1,p2,p;
     double alpha = 3.1415;
@@ -53,30 +53,30 @@ int main(int argc, char  ** argv)
     //     }
     // }
 
-    // double x0 = 0.4, y0 = 0.0, z0 = 0.3, radius=0.1;
-    // for (double angle = 0; angle <= 360; angle += 5) {
-    //     p.position(0) = x0+radius*cos(angle);
-    //     p.position(1) = y0;
-    //     p.position(2) = z0+radius*sin(angle);
-    //     p.orientation(2) = alpha;
-    //     ROS_INFO_STREAM("(x, y, z) -- (" << p.position(0) << ", " << p.position(1) << ", " << p.position(2) << ")");
-    //     startPoses.push_back(p);
-    // }
+    double x0 = 0.25, y0 = 0.25, z0 = 0.0, radius=0.1;
+    for (double angle = 0; angle <= 360; angle += 5) {
+        p.position(0) = x0+radius*cos(angle*3.14/180);
+        p.position(1) = y0+radius*sin(angle*3.14/180);
+        p.position(2) = z0;
+        p.orientation(2) = alpha;
+        ROS_INFO_STREAM("(x, y, z) -- (" << p.position(0) << ", " << p.position(1) << ", " << p.position(2) << ")");
+        startPoses.push_back(p);
+    }
 
-    p1.position(0) = 0.56;
-    p1.position(1) = -0.12;
-    p1.position(2) = 0.135;
-    p1.orientation(1) = 0.1;
-    p1.orientation(2) = 1.6;
+    // p1.position(0) = 0.56;
+    // p1.position(1) = -0.12;
+    // p1.position(2) = 0.135;
+    // p1.orientation(1) = 0.1;
+    // p1.orientation(2) = 1.6;
     
 
-    p2.position(0) = -0.3;
-    p2.position(1) = 0;
-    p2.position(2) = 0.3;
-    p2.orientation(2) = -2;
+    // p2.position(0) = -0.3;
+    // p2.position(1) = 0;
+    // p2.position(2) = 0.3;
+    // p2.orientation(2) = -2;
 
-    startPoses.push_back(p1);
-    startPoses.push_back(p2);
+    // startPoses.push_back(p1);
+    // startPoses.push_back(p2);
     // startPoses.push_back(p1);
 
     ArmKinematics solver;
@@ -129,13 +129,11 @@ int main(int argc, char  ** argv)
         // }   
 
         manipulator.moveArm(startPose);
-        manipulator.moveGripper(0.0115);
+        // manipulator.moveGripper(0.0115);
          
-        ros::Duration(8).sleep();
-        manipulator.moveGripper(0);
-        ros::Duration(2).sleep();
+        // ros::Duration(2).sleep();
          
-        //manipulator.moveToLineTrajectory(startPose, endPose);
+        manipulator.moveToLineTrajectory(startPose, endPose);
 
         manipulator.moveArm(endPose);
          

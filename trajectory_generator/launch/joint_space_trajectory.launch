@@ -1,0 +1,10 @@
+<launch>
+	
+	<node
+		pkg = "trajectory_generator"
+		type = "joint_traj_test"
+		name = "joint_traj_test"
+		output = "screen">
+		<rosparam command="load" file="$(find trajectory_generator)/config/TrajectoryState.yaml" />
+	</node>
+</launch>

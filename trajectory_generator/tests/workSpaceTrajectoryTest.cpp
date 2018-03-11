@@ -7,6 +7,8 @@ int main(int argc, char *argv[])
     ros::init(argc, argv, "work_traj_test");
     ros::NodeHandle nh;
 
+    std::string path;
+
     // Read parametars
     double maxAcc = 0.05, maxVel = 0.01, timeStep = 0.01;
     std::vector<double> initPosition, endPosition, orientation;
@@ -16,6 +18,7 @@ int main(int argc, char *argv[])
     nh.getParam("/work_traj_test/a_m", maxAcc);
     nh.getParam("/work_traj_test/v_m", maxVel);
     nh.getParam("/work_traj_test/time_step", timeStep);
+    nh.getParam("/work_traj_test/path", path);
 
     if (!reading) {
         ROS_FATAL_STREAM("[WST test] Parameters launch file is not found.");
@@ -35,6 +38,7 @@ int main(int argc, char *argv[])
         ROS_INFO_STREAM("[WST test] Max vel.: " << maxVel);
         ROS_INFO_STREAM("[WST test] Max accel.: " << maxAcc);
         ROS_INFO_STREAM("[WST test] Time step: " << timeStep);
+        ROS_INFO_STREAM("[WST test] Path: " << path);
     }
 
     // Converation variables
@@ -46,36 +50,42 @@ int main(int argc, char *argv[])
 
 
     startPose.position(0) = initPosition[0];
+    startPose.position(1) = initPosition[1];
     startPose.position(2) = initPosition[2];
     startPose.orientation(2) = alpha;
     if (!solver.solveFullyIK(startPose, angles)) {
         ROS_ERROR_STREAM("Solution start pose not found!");
         return 1;
     }
-    ROS_INFO_STREAM("[WST test] Start alpha: " << (angles(1) + angles(2) + angles(3)));
+    ROS_INFO_STREAM("[WST test] Start alpha: " << angles(1) + angles(2) + angles(3));
 
     endPose.position(0) = endPosition[0];
+    endPose.position(1) = endPosition[1];
     endPose.position(2) = endPosition[2];
     endPose.orientation(2) = alpha;
+
     if (!solver.solveFullyIK(endPose, angles)) {
-        ROS_ERROR_STREAM("Solution end pose not found!");
+        ROS_ERROR_STREAM("[WST test]Solution end pose not found!");
         return 1;
     }
     ROS_INFO_STREAM("[WST test] End alpha: " << (angles(1) + angles(2) + angles(3)));
 
     ROS_INFO_STREAM("[WST test] Start position (" << startPose.position(0) << ", " 
         << startPose.position(1) << ", " <<  startPose  .position(2) << ")");
-    ROS_INFO_STREAM("[WST test] End position (" << startPose.position(0) << ", " 
+    ROS_INFO_STREAM("[WST test] End position (" << endPose.position(0) << ", " 
         << endPose.position(1) << ", " <<  endPose.position(2) << ")");
     Trajectory traj;
     traj.calculateWorkSpaceTrajectory(maxVel, maxAcc, startPose, endPose, timeStep);
 
     std::ofstream logFile;
-    std::string logDirPath = "/home/senex/youbot_ws/src/red_manipulation_step/trajectory_generator/";
+    std::string logDirPath = path;
     std::stringstream filename;
     filename << logDirPath << "logs/WorkSpaceTraj" << ".log";
     std::string file = filename.str();
     logFile.open(file.c_str());
+
+    if (!logFile.is_open())
+    	ROS_WARN_STREAM("file "<<  filename.str()<<" is not opened");
 
     ROS_INFO_STREAM("Size: " << traj.posTra.size());
     for (uint i = 0; i < traj.posTra.size(); ++i) {
