@@ -1,42 +1,41 @@
 clear;
-directory = "/home/egor/vrepWS/src/red_manipulation_step/trajectory_generator/scilab/";
+directory = get_absolute_file_path("Trajectory.sce");
 exec(directory + "math.sce", -1);
 exec(directory + "kinematic.sce", -1);
 
-function [time, vel, coord, rot] = workSpaceTraj(v_i, v_e, maxAccel, maxVel, timeStep)
+function [time, vel, coord, rot] = workSpaceTraj(startPose, endPose, maxAccel, maxVel, timeStep)
     // initial and end point
-    p_i = v_i(1:3); p_e = v_e(1:3);
+    p_i = startPose(1:3); p_e = endPose(1:3);
     p_diff = p_e - p_i;
 
     t1 = maxVel/maxAccel;
     t2 = norm(p_diff)/maxVel;
     t3 = t2 + t1;
-    d = normalize(p_diff);
-    diraction = sign(norm(p_diff));
+    movementDirection = normalize(p_diff);
+    directionSign = sign(norm(p_diff));
 
     // rotation trajectory
-    theta_i = v_i(4); theta_e = v_e(4);
-    psi_i = v_i(5); psi_e = v_e(5);
+    theta_i = startPose(4); theta_e = endPose(4);
+    psi_i = startPose(5); psi_e = endPose(5);
     rotVel = [theta_e - theta_i; psi_e - psi_i]/t3;
 
-    function absVel = velFunc(x)
-	disp("t:",x,t);
+    function absVel = getVel(x)
         if x >= 0 & x < t1 then
-            absVel = diraction*maxAccel*t;
+            absVel = directionSign*maxAccel*t;
             return
         end
         if x >= t1 & x < t2 then
-            absVel = diraction*maxVel;
+            absVel = directionSign*maxVel;
             return
         end
         if x >= t2 & x < t3 then
-            absVel = diraction*(maxVel - maxAccel*(t - t2));
+            absVel = directionSign*(maxVel - maxAccel*(t - t2));
             return
         end
         absVel = 0;
     endfunction
 
-    function rv = rotVelFunc(x)
+    function rv = getRotVel(x)
         if x >= 0 & x < t3 then
             rv = rotVel;
         end
@@ -54,16 +53,11 @@ function [time, vel, coord, rot] = workSpaceTraj(v_i, v_e, maxAccel, maxVel, tim
     rot = []; currRot = [theta_i; psi_i];
     time = (-5*timeStep:timeStep:t3 + 5*timeStep) + 5*timeStep;
     for t = -5*timeStep:timeStep:t3 + 5*timeStep
-        currVel = d*velFunc(t);
+        currVel = movementDirection*getVel(t);
         vel = [vel, currVel];
         coord = [coord, currCoord];
         rot = [rot, currRot]
-        currCoord = currCoord + timeStep/2 * (currVel + d*velFunc(t + timeStep));
-        currRot = currRot + timeStep/2 * (rotVelFunc(t) + rotVelFunc(t + timeStep));
+        currCoord = currCoord + timeStep/2 * (currVel + movementDirection*getVel(t + timeStep));
+        currRot = currRot + timeStep/2 * (getRotVel(t) + getRotVel(t + timeStep));
     end
 endfunction
-
-//function q = workSpaceToJoint(time, v)
-//    q = [];
-//endfunction
-

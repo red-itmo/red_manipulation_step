@@ -46,41 +46,35 @@ int main(int argc, char *argv[])
     std::vector<JointValues> sol;
     ArmKinematics solver;
     Vector3d zeros, smoothPos;
-    double alpha = orientation[1];
     double alpha1, alpha2;
 
     startPose.position(0) = initPosition[0];
     startPose.position(1) = initPosition[1];
     startPose.position(2) = initPosition[2];
-    startPose.orientation(2) = alpha;
-    if (!solver.solveFullyIK(startPose, angles)) {
+    startPose.orientation(0) = 3.1415;
+    startPose.orientation(1) = 0;
+    startPose.orientation(2) = orientation[0];
+
+    JointValues maxRot;
+    maxRot(1) = M_PI / 3;
+	maxRot(2) = M_PI / 6;
+	maxRot(3) = M_PI / 6;
+
+    if (solver.numericalIK(startPose, maxRot)(0)==-1000) {
         ROS_ERROR_STREAM("Solution start pose not found!");
         return 1;
     }
-    alpha1 = angles(1) + angles(2) + angles(3);
-    ROS_INFO_STREAM("[WST test] Start alpha: " << alpha1);
-
-    endPose = startPose;
+    
     endPose.position(0) = endPosition[0];
     endPose.position(1) = endPosition[1];
     endPose.position(2) = endPosition[2];
+    endPose.orientation(0) = 3.1415;
+    endPose.orientation(1) = 0;
+    endPose.orientation(2) = orientation[1];
 
-    endPose.orientation(2) = alpha;
-    if (!solver.solveFullyIK(endPose, angles)) {
+    if (solver.numericalIK(endPose, maxRot)(0)==-1000) {
         ROS_ERROR_STREAM("Solution end pose not found!");
         return 1;
-    }
-    alpha2 = angles(1) + angles(2) + angles(3);
-    ROS_INFO_STREAM("[WST test] End alpha: " << alpha2);
-
-    if (alpha1 != alpha2) {
-        startPose.orientation(2) = alpha2;
-        if (!solver.solveFullyIK(startPose, angles)) {
-            ROS_ERROR_STREAM("Solution start pose not found!");
-            return 1;
-        }
-        alpha1 = angles(1) + angles(2) + angles(3);
-        ROS_INFO_STREAM("[WST test] Start alpha: " << alpha1);
     }
 
     Trajectory traj;
@@ -117,17 +111,17 @@ int main(int argc, char *argv[])
 
     for (uint i = 0; i < traj.qTra.size(); ++i) {
         curJntAng = traj.qTra[i];
-        curAngVel = traj.qdotTra[i];
-        curAngAcc = traj.qdotdotTra[i];
+        // curAngVel = traj.qdotTra[i];
+        // curAngAcc = traj.qdotdotTra[i];
         // curEMA = traj.ema[i];
-        angleWithoutOffsets = curJntAng;
-        makeKinematicModelOffsets(angleWithoutOffsets);
-        smoothPos = solver.transformFromFrame5ToFrame0(angleWithoutOffsets, zeros);
-        logFile << curJntAng(0) << "\t" << curJntAng(1) << "\t" << curJntAng(2) << "\t" << curJntAng(3) << "\t" << curJntAng(4)
-        << "\t"  << curAngVel(0) << "\t" << curAngVel(1) << "\t" << curAngVel(2) << "\t" << curAngVel(3) << "\t" << curAngVel(4)
-        << "\t" << curAngAcc(0) << "\t" << curAngAcc(1) << "\t" << curAngAcc(2) << "\t" << curAngAcc(3) << "\t" << curAngAcc(4)
-        << "\t" << smoothPos(0) << "\t" << smoothPos(1) << "\t" << smoothPos(2)
-        << "\t" << traj.time[i] << "\n";
+        // angleWithoutOffsets = curJntAng;
+        // makeKinematicModelOffsets(angleWithoutOffsets);
+        // smoothPos = solver.transformFromFrame5ToFrame0(angleWithoutOffsets, zeros);
+        logFile << curJntAng(0) << "\t" << curJntAng(1) << "\t" << curJntAng(2) << "\t" << curJntAng(3) << "\t" << curJntAng(4) << "\t" << traj.time[i] << "\n";
+        // << "\t"  << curAngVel(0) << "\t" << curAngVel(1) << "\t" << curAngVel(2) << "\t" << curAngVel(3) << "\t" << curAngVel(4)
+        // << "\t" << curAngAcc(0) << "\t" << curAngAcc(1) << "\t" << curAngAcc(2) << "\t" << curAngAcc(3) << "\t" << curAngAcc(4)
+        // << "\t" << smoothPos(0) << "\t" << smoothPos(1) << "\t" << smoothPos(2)
+        // << "\t" << traj.time[i] << "\n";
     }
 
     return 0;

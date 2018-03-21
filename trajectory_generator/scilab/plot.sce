@@ -1,4 +1,6 @@
 function makeWorkSpacePlot()
+	RAD2DEG = 180/%pi;
+	RAD2DEG = 1;
     filePath="~/vrepWS/src/red_manipulation_step/trajectory_generator/logs/WorkSpaceTraj.log"
     results=read(filePath, -1, 4);
     i=1;
@@ -8,9 +10,10 @@ function makeWorkSpacePlot()
     results(:,i+3)*RAD2DEG]
     plot(angle(:,4), angle(:,3));
 endfunction
+
+
 //makeWorkSpacePlot();
 //return;
-
 filePath="~/vrepWS/src/red_manipulation_step/trajectory_generator/logs/JointSpaceTraj.log"
 results=read(filePath, -1, 10);
 RAD2DEG = 180/%pi;
@@ -23,14 +26,6 @@ results(:,i+3)*RAD2DEG,...
 results(:,i+4)*RAD2DEG];
 text='положение звена';
 
-//function e=G(a,z),
-//e=z(2)-a(1)*z(1)+a(1)*a(2)-a(1)*a(2)*%e^(-z(1)/a(2));
-//endfunction
-//att=[4;8];
-//[k,error]=datafit(G,aim',att);
-//model=k(1)*time-k(1)*k(2)+k(1)*k(2)*%e^(-time/k(2));
-//deletefile("F:\temp1.txt")
-//write("F:\temp1.txt", aim)
 xset("font size", 3);
 xtitle(text+' 1', 'Точка, ном.', 'Угол, [ ]');
 subplot(321);

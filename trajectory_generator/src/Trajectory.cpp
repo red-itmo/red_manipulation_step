@@ -6,7 +6,7 @@ Trajectory::Trajectory()
 Trajectory::~Trajectory()
 {}
 
-void Trajectory::exponencialMovingAvarage(std::vector<JointValues> & data, std::vector<JointValues> & movingAvarage, const double alpha) 
+void Trajectory::exponencialMovingAvarage(std::vector<JointValues> & data, std::vector<JointValues> & movingAvarage, const double alpha)
 {
 	size_t n = data.size();
 	size_t nAvg = movingAvarage.size();
@@ -15,87 +15,86 @@ void Trajectory::exponencialMovingAvarage(std::vector<JointValues> & data, std::
 
 	movingAvarage[0] = data[0];
 	for (size_t i = 1; i < n; ++i) {
-		movingAvarage[i] = alpha*data[i] + (1 - alpha)*movingAvarage[i - 1];
+		movingAvarage[i] = alpha * data[i] + (1 - alpha) * movingAvarage[i - 1];
 	}
 }
 
+double Trajectory::getVel(double time)
+{
+	// ROS_INFO_STREAM("directionSign:"<< directionSign<<" mAc:"<<maxAccel<<" t:"<<time<<" v:"<<maxVel);
+	if (time >= 0 && time < t1)
+		return directionSign * maxAccel * time;
+	if (time >= t1 && time < t2)
+		return directionSign * maxVel;
+	if (time >= t2 && time <= t3)
+		return directionSign * (maxVel - maxAccel * (time - t2));
+	// ROS_WARN_STREAM("[Trajectory]time>t3");
+	return 0;
+}
+
+Vector3d Trajectory::getRotVel(double time)
+{
+	if (time >= 0 && time <= t3)
+		return rotVel;
+	rotVel(0) = 0;
+	rotVel(1) = 0;
+	rotVel(2) = 0;
+	return rotVel;
+}
 void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep)
 {
-	Vector3d positionDiff, rotationDiff, movementDirection, rotVel, currPos, currRot, initPos, prevPos, dPos(0,0,0);
-	const double acceleration[4] = {0, maxAccel, 0, -maxAccel};
-	initPos = startPose.position;
-	positionDiff = endPose.position - startPose.position;
-	movementDirection = positionDiff;
+	this->maxAccel = maxAccel;
+	this->maxVel = maxVel;
+	Vector3d positionDiff = endPose.position - startPose.position;
+	Vector3d movementDirection = positionDiff;
 	movementDirection.normalize();
+	directionSign = std::abs(positionDiff.norm()) / positionDiff.norm();
 
-	ROS_DEBUG_STREAM(""<<positionDiff(0)<<" "<<positionDiff(1)<<" "<<positionDiff(2));
-	ROS_DEBUG_STREAM("[trajectory] Max Vel: " << maxVel << " Max Accel: " << maxAccel <<" TimeStep: " << timeStep);
-	// Calculate trajectory times        
-	const double trajectoryTime[4] = {
-		0,
-		maxVel/maxAccel,                                                    // acceleration = maxAccel; start velocity = 0; time to get V_max
-		positionDiff.norm()/maxVel,                                         // acceleration = 0; velocity = maxVel; time with V_max
-		(maxVel*maxVel + positionDiff.norm()*maxAccel)/(maxAccel*maxVel)    // acceleration = -maxAccel; end velocity = 0; sum of previous two??why
-		//maybe (2*maxVel*maxVel + positionDiff.norm()*maxAccel)/(maxAccel*maxVel) ?
-	};
-	ROS_INFO_STREAM("[Trajectory] Time variables (" << trajectoryTime[1] << ", " << trajectoryTime[2] << ", " << trajectoryTime[3] << ")");
-	ROS_INFO_STREAM("[Trajectory] Movement Dir (" << movementDirection(0) << ", " << movementDirection(1) << ", " << movementDirection(2) << ")");
+	ROS_DEBUG_STREAM("[trajectory] Max Vel: " << maxVel << " Max Accel: " << maxAccel << " TimeStep: " << timeStep);
+	// Calculate trajectory times
+	t1 = maxVel / maxAccel;
+	t2 = positionDiff.norm() / maxVel;
+	t3 = t2 + t1;
 
-	double currentTime = 0;
-	// Initial state of trajectory - x(0) = 0
-	for (; currentTime <= trajectoryTime[1]; currentTime += timeStep) {
-		currPos = maxAccel*currentTime*currentTime/2.0 * movementDirection + initPos;
-		posTra.push_back(currPos);
+	ROS_INFO_STREAM("[Trajectory] Time variables (" << t1 << ", " << t2 << ", " << t3 << ")");
+
+	// rotation trajectory
+	double theta_i = startPose.orientation(0),
+	       theta_e = endPose.orientation(0),
+	       psi_i = startPose.orientation(1),
+	       psi_e = endPose.orientation(1);
+	rotVel(0) = (theta_e - theta_i) / t3;
+	rotVel(1) = (psi_e - psi_i) / t3;
+
+	if (t2 < t1)
+	{
+		ROS_FATAL_STREAM("[Trajectory]t2<t1");
+		return;
+	}
+	Vector3d currCoord = startPose.position;
+	Vector3d currRot(theta_i, psi_i, 0);
+	Vector3d currVel;
+
+	for (double currentTime = 0; currentTime < t3; currentTime += timeStep)
+	{
+		currVel = movementDirection * getVel(currentTime);
+		velTra.push_back(currVel);
+		posTra.push_back(currCoord);
 		time.push_back(currentTime);
+		rotTra.push_back(currRot);
+		currCoord += timeStep / 2 * (currVel + movementDirection * getVel(currentTime + timeStep));
+		currRot += timeStep / 2 * (getRotVel(currentTime) + getRotVel(currentTime + timeStep));
 	}
-	for (; currentTime < trajectoryTime[2]; currentTime += timeStep) {
-	    currPos = (maxVel*currentTime - maxAccel*trajectoryTime[1]*trajectoryTime[1]/2.0) * movementDirection + initPos;
-	    posTra.push_back(currPos);
-	    time.push_back(currentTime);
-	}
-	for (; currentTime <= trajectoryTime[3]; currentTime += timeStep) {
-	    currPos = (- maxAccel*currentTime*currentTime/2.0
-	             + maxAccel*(trajectoryTime[1] + trajectoryTime[2])*currentTime
-	             - maxAccel/2.0*(trajectoryTime[1]*trajectoryTime[1] + trajectoryTime[2]*trajectoryTime[2])) * movementDirection + initPos;
-	    posTra.push_back(currPos);
-	    time.push_back(currentTime);
-	}
-	// prevPos=startPose.position;
-	// for (; currentTime <= trajectoryTime[1]; currentTime += timeStep) {
-	// 	dPos = maxAccel*currentTime*currentTime/2.0 * movementDirection-dPos;
-	// 	ROS_DEBUG_STREAM("dPos:"<<dPos(0)<<" "<<dPos(1)<<" "<< dPos(2));
-	// 	prevPos+=dPos;
-	// 	posTra.push_back(prevPos);
-	// 	time.push_back(currentTime);
-	// }
-	// dPos-=dPos;
-	// for (; currentTime < trajectoryTime[2]; currentTime += timeStep) {
-	// 	dPos = maxVel*currentTime * movementDirection-dPos;
-	// 	prevPos+=dPos;
-	// 	posTra.push_back(prevPos);
-	// 	time.push_back(currentTime);
-	// }
-	// dPos-=dPos;
-	// for (; currentTime <= trajectoryTime[3]; currentTime += timeStep) {
-	// 	dPos = (maxAccel*(currentTime-trajectoryTime[2])*(currentTime-trajectoryTime[2])/2.0) * movementDirection-dPos;
-	// 	prevPos+=dPos;
-	// 	posTra.push_back(prevPos);
-	// 	time.push_back(currentTime);
-	// }
-	for(int i=0;i<posTra.size();i++)
-		ROS_DEBUG_STREAM(""<<posTra[i](0)<<" "<<posTra[i](1)<<" "<<posTra[i](2)<<" "<<time[i]);
-	// End state of trajectory - x(endTime) = endPose.norm()
-	posTra.push_back(endPose.position);
-	time.push_back(currentTime);
+	ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:"<<rotTra.size());
 }
 
 void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, const double timeStep)
 {
 	JointValues currJntAng, currJntAngVel, currJntAngAcc;
-	JointValues prevAngles, currAngles, nextAngles, anglesDiff;
+	JointValues prevAngles, currAngles, nextAngles, anglesDiff, zeroVec;
+	zeroVec.setZero();
 	ArmKinematics solver;
 	double prevTime, currTime, nextTime;
-	bool err = false;
 
 	Vector3d rotVel, startRot, endRot, currRot, currPosition;
 	double startAlpha, endAlpha, alpha, alphaVel;
@@ -103,108 +102,49 @@ void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, cons
 	startRot = startPose.orientation;
 	endRot = endPose.orientation;
 
-	for (int configuration = -1; configuration < 2; configuration += 2) {
-		rotTra.clear();
-		qTra.clear();
-
-		if (solver.solveIK(startPose, currJntAng, configuration)) 
-			startAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
-		else {
-			ROS_WARN_STREAM("Solution for start position with configuration: " << configuration << " is not found");
-			continue;
-		}
-
-		endPose.orientation(2) = startAlpha;
-		if (solver.solveIK(endPose, currJntAng, configuration)) 
-			endAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
-		else {
-			ROS_WARN_STREAM("Solution for end position with configuration: " << configuration << " is not found");
-			continue;
-		}
-
-		if (startAlpha != endAlpha) {
-			startPose.orientation(2) = endAlpha;
-			solver.solveIK(startPose, currJntAng, configuration);
-			startAlpha = currJntAng(1) + currJntAng(2) + currJntAng(3);
-		}
-
-		startRot(2) = startAlpha;
-		endRot(2) = endAlpha;
-		rotVel = (endRot - startRot)/(posTra.size() - 1);
-
-		currRot = startRot;
-		for (size_t i = 0; i < posTra.size(); ++i) {
-			rotTra.push_back(currRot);
-			currRot += rotVel;
-		}
-
-		for (size_t i = 0; i < posTra.size(); ++i) {
-			if (!solver.solveIK(posTra[i], rotTra[i], currJntAng, configuration)) {
-				ROS_WARN_STREAM("Solution is not found at configuration: " << configuration);
-				err = true;
-				break;
-			}
-			makeYoubotArmOffsets(currJntAng);
-
-			anglesDiff = currJntAng - prevAngles;
-			if (i > 0 && anglesDiff(1) > 0.03) {
-				for (size_t j = 0; j <= i - 1; ++j) {
-					qTra[j] += anglesDiff;
-				}
-			}
-			
-			qTra.push_back(currJntAng);
-			prevAngles = currJntAng;
-		}
-		if (err == true) continue;
-
-		std::vector<JointValues>::iterator pp = qTra.begin() - 1;
-		std::vector<JointValues>::iterator np = qTra.begin() + 1;
-		
-		for (std::vector<JointValues>::iterator cp = qTra.begin(); cp != qTra.end(); ++cp) {
-			if (pp == qTra.begin() - 1) {
-				prevAngles = *cp;
-				// prevTime = *ct;
-			} else {
-				prevAngles = *pp;
-				// prevTime = *pt;
-			}
-			currAngles = *cp;
-			// currTime = *ct;
-			if (np == qTra.end()) {
-				nextAngles = *cp;
-				// nextTime = *ct;
-			} else {
-				nextAngles = *np;
-				// nextTime = *nt;
-			}
-
-			//forward difference for velocity
-			currJntAngVel = (nextAngles - currAngles) / timeStep;
-
-			//second derivative for acceleration (f(x+h)-2*f(x)+f(x-h))/timeStep^2
-			currJntAngAcc = (nextAngles - 2.0 * currAngles + prevAngles) / pow(timeStep, 2);
-
-			qdotTra.push_back(currJntAngVel);
-			qdotdotTra.push_back(currJntAngAcc);
-			++pp; ++np;
-			// ++pt; ++ct; ++nt;
-		}
-		
-		currJntAngVel.setZero();
-		qdotTra.erase(qdotTra.begin());
-		qdotTra.erase(qdotTra.end());
-		qdotTra.insert(qdotTra.begin(), currJntAngVel);
-		qdotTra.insert(qdotTra.end(), currJntAngVel);
-		currJntAngAcc.setZero();
-		qdotdotTra.erase(qdotdotTra.begin());
-		qdotdotTra.erase(qdotdotTra.end());
-		qdotdotTra.insert(qdotdotTra.begin(), currJntAngAcc);
-		qdotdotTra.insert(qdotdotTra.end(), currJntAngAcc);
-		ROS_INFO_STREAM("Trajectory is generated. Number of steps is "<<qTra.size()<<" points.");
-		return;
+	std::vector<Pose> poses;
+	Pose pose;
+	for (int i = 0; i < posTra.size(); ++i) {
+		pose.position = posTra[i];
+		pose.orientation(0) = rotTra[i](0);
+		pose.orientation(1) = rotTra[i](1);
+		pose.orientation(2) = rotTra[i](2);
+		poses.push_back(pose);
 	}
-	ROS_FATAL_STREAM("Trajectory is not construct.");
+	Vector3d angles1 = solver.calcMaxRot(poses.front().position);
+	Vector3d angles2 = solver.calcMaxRot(poses.back().position);
+	double theta1 = angles1(0) + angles1(1) + angles1(2);
+	double theta2 = angles2(0) + angles2(1) + angles2(2);
+	if (theta1 > M_PI)
+		theta1 = M_PI;
+	if (theta2 > M_PI)
+		theta2 = M_PI;
+
+	double err = 0, offset = 0, theta;
+	Pose curConf;
+	Vector3d ang;
+	JointValues curRot, maxRot = matrix::zeros<double, 5, 1>();
+	for (size_t i = 0; i < poses.size(); ++i)
+	{
+		curConf = poses[i];
+		ang = solver.calcMaxRot(curConf.position);
+
+
+		maxRot(1) = M_PI / 3;
+		maxRot(2) = M_PI / 6;
+		maxRot(3) = M_PI / 6;
+		theta = ang(0) + ang(1) + ang(2);
+		offset = 0;
+		if (theta > M_PI - 0.1)
+			offset = pow(theta + 0.1 - M_PI, 2);
+		else
+			offset = 0;
+		curConf.orientation(0) = theta - 0.1 - offset;
+		curRot = solver.numericalIK(curConf, maxRot);
+		if(curRot(0)==-1000)
+			return;
+		qTra.push_back(curRot);
+	}
 }
 
 void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajectory)
@@ -212,7 +152,7 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
 	ROS_INFO("Generating message...");
 	JointValues currJntAng, currJntAngAcc, currJntAngVel;
 	double timeStep = time[1] - time[0];
-	
+
 	for (size_t p = 0; p < qTra.size(); ++p) {
 
 		trajectory_msgs::JointTrajectoryPoint point;
@@ -227,7 +167,7 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
 			// ROS_DEBUG("[trajectory]%f",currJntAng(i));
 			point.velocities.push_back(currJntAngAcc(i));
 			point.accelerations.push_back(currJntAngVel(i));
-			point.time_from_start = ros::Duration(p*timeStep);
+			point.time_from_start = ros::Duration(p * timeStep);
 		}
 		trajectory.points.push_back(point);
 	}
