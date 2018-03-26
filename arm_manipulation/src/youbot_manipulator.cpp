@@ -6,7 +6,6 @@ YoubotManipulator::YoubotManipulator(ros::NodeHandle & nodeHandle)
     :nh(nodeHandle)
 {
     nh.param("/trajectory_test/youBotDriverCycleFrequencyInHz", lr, 100.0);
-    nh.param("simulation", sim, true);
     nh.param("/trajectory_test/timeStep", timeStep, 0.05);
 }
 
@@ -138,17 +137,11 @@ bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredVa
         duration = ros::Time::now().sec - startTimeAchievement;
         if (duration>=WATCHDOG_TIME)
         { 
-            ROS_DEBUG_STREAM_ONCE("norm:"<<diff.norm()<<
-            " 0:" << desiredValues(0)*180/M_PI<< ";"<<currentValues(0)*180/M_PI<<" "<<
-         " 1:" << desiredValues(1)*180/M_PI<< ";"<<currentValues(1)*180/M_PI<<" "<< 
-         " 2:" << desiredValues(2)*180/M_PI<< ";"<<currentValues(2)*180/M_PI<<" "<<
-         " 3:" << desiredValues(3)*180/M_PI<< ";"<<currentValues(3)*180/M_PI<<
-         " 4:" << desiredValues(4)*180/M_PI<< ";"<<currentValues(4)*180/M_PI);
             ROS_WARN("WATCHDOG timeout, inaccurate position!");
             return false;
         }
         diff = desiredValues - currentValues;
-    } while (diff.norm() > 0.2 && nh.ok());
+    } while (diff.norm() > 0.1 && nh.ok());
     return true;
 }
 

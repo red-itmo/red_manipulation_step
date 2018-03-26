@@ -1,5 +1,4 @@
 <launch>
-	<param name="simulation" type="bool" value="true" />
 	<node
 		pkg = "arm_manipulation"
 		type = "move_by_camera"

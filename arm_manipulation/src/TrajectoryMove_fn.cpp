@@ -47,8 +47,7 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
      
     ros::Duration(2).sleep();
     
-    //sim flag to distinguish simulation and real experiment
-    if (!gen.trajectory.points.empty() && !sim)
+    if (!gen.trajectory.points.empty())
     {
         ROS_INFO("Waiting for server...");
         trajectoryAC->waitForServer(); // Will wait for infinite time
