@@ -45,15 +45,9 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     ROS_INFO("Going to initial position...");
     armPublisher.publish(jointPositions);
      
-    ros::Duration(0.5).sleep();
-     
-    ROS_INFO("Publishing trajectory...");
-    for(int i=0;i<rotationsTrajectory.size();i++){
-        armPublisher.publish(createArmPositionMsg(rotationsTrajectory[i]));
-        ros::Duration(0.01).sleep();
-    }
-
-    //temporarily disabled to be able to launch simulation
+    ros::Duration(2).sleep();
+    
+    //sim flag to distinguish simulation and real experiment
     if (!gen.trajectory.points.empty() && !sim)
     {
         ROS_INFO("Waiting for server...");

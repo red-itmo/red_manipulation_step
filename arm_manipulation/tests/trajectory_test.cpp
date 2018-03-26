@@ -17,20 +17,8 @@ int main(int argc, char  ** argv)
     double timeStep = 0.05, maxVel = 0.05, maxAcc = 0.1;
 
     nh.param("/trajectory_test/a_m", maxAcc, 0.1);
-    if (!nh.hasParam("/trajectory_test/a_m"))
-      {
-        ROS_WARN("[Arm Manipulation]No param '/trajectory_test/a_m', setting 0.1");
-      }
     nh.param("/trajectory_test/v_m", maxVel, 0.05);
-    if (!nh.hasParam("/trajectory_test/v_m"))
-      {
-        ROS_WARN("[Arm Manipulation]No param '/trajectory_test/v_m', setting 0.05");
-      }
     nh.param("/trajectory_test/time_step", timeStep, 0.2);    
-    if (!nh.hasParam("/trajectory_test/time_step"))
-      {
-        ROS_WARN("[Arm Manipulation]No param '/trajectory_test/time_step', setting 0.2");
-      }
 
     std::vector<Pose> startPoses;
     double xMin = 0.35, xMax = 0.35;
