@@ -111,14 +111,15 @@ int main(int argc, char *argv[])
 
     for (uint i = 0; i < traj.qTra.size(); ++i) {
         curJntAng = traj.qTra[i];
-        // curAngVel = traj.qdotTra[i];
+        curAngVel = traj.qdotTra[i];
         // curAngAcc = traj.qdotdotTra[i];
         // curEMA = traj.ema[i];
         // angleWithoutOffsets = curJntAng;
         // makeKinematicModelOffsets(angleWithoutOffsets);
         // smoothPos = solver.transformFromFrame5ToFrame0(angleWithoutOffsets, zeros);
-        logFile << curJntAng(0) << "\t" << curJntAng(1) << "\t" << curJntAng(2) << "\t" << curJntAng(3) << "\t" << curJntAng(4) << "\t" << traj.time[i] << "\n";
-        // << "\t"  << curAngVel(0) << "\t" << curAngVel(1) << "\t" << curAngVel(2) << "\t" << curAngVel(3) << "\t" << curAngVel(4)
+        logFile << curJntAng(0) << "\t" << curJntAng(1) << "\t" << curJntAng(2) << "\t" << curJntAng(3) << "\t" << curJntAng(4) 
+        << "\t"  << curAngVel(0) << "\t" << curAngVel(1) << "\t" << curAngVel(2) << "\t" << curAngVel(3) << "\t" << curAngVel(4)
+        << "\t" << traj.time[i] << "\n";
         // << "\t" << curAngAcc(0) << "\t" << curAngAcc(1) << "\t" << curAngAcc(2) << "\t" << curAngAcc(3) << "\t" << curAngAcc(4)
         // << "\t" << smoothPos(0) << "\t" << smoothPos(1) << "\t" << smoothPos(2)
         // << "\t" << traj.time[i] << "\n";

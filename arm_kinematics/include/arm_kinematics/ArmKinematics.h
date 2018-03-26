@@ -12,36 +12,36 @@ bool checkAngles(const JointValues & jointAngles);
 
 class ArmKinematics {
 
-	public:
+public:
 
-		ArmKinematics();
-		~ArmKinematics();
+	ArmKinematics();
+	~ArmKinematics();
 
 
-		Vector3d transformFromFrame5ToFrame0(const JointValues & jointAngles, const Vector3d & position);
+	Vector3d transformFromFrame5ToFrame0(const JointValues & jointAngles, const Vector3d & position);
 
-		// Solve IK for first and
-		bool solveSpaceIK(Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, JointValues & jointAngles, double & alpha);
-		bool solveSpaceIK(Vector3d & position, const Vector3d & orientation, JointValues & jointAngles, double & alpha);
-		bool solvePlaneIK(Vector3d position, const double alpha, JointValues & jointAngles, const int configuration);
+	// Solve IK for first and
+	bool solveSpaceIK(Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, JointValues & jointAngles, double & alpha);
+	bool solveSpaceIK(Vector3d & position, const Vector3d & orientation, JointValues & jointAngles, double & alpha);
+	bool solvePlaneIK(Vector3d position, const double alpha, JointValues & jointAngles, const int configuration);
 
-		bool solveIK(const Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, JointValues & jointAngles, const int configuration);
-		bool solveIK(const Vector3d & position, const double phi5, const double alpha, JointValues & jointAngles, const int configuration);
-		bool solveIK(const Vector3d & position, const Vector3d & orientation, JointValues & jointAngles, const int configuration);
-		bool solveIK(const Pose & position, JointValues & jointAngles, const int configuration);
+	bool solveIK(const Vector3d & position, matrix::Matrix<double, 3, 3> & orientation, JointValues & jointAngles, const int configuration);
+	bool solveIK(const Vector3d & position, const double phi5, const double alpha, JointValues & jointAngles, const int configuration);
+	bool solveIK(const Vector3d & position, const Vector3d & orientation, JointValues & jointAngles, const int configuration);
+	bool solveIK(const Pose & position, JointValues & jointAngles, const int configuration);
 
-		bool solveFullyIK(const Pose & position, JointValues & jointAngles);
+	bool solveFullyIK(const Pose & position, JointValues & jointAngles);
 
-		// Calc velocities and accelerations
-		void calcKinematicsParams(const Vector3d & linearVelocities, const JointValues & jointAngles, JointValues & jointAngVel, JointValues & jointAngAcc);
+	// Calc velocities and accelerations
+	void calcKinematicsParams(const Vector3d & linearVelocities, const JointValues & jointAngles, JointValues & jointAngVel, JointValues & jointAngAcc);
 
-		Vector3d calcMaxRot(const Vector3d & position);
-		Vector3d ForwardKin(const JointValues &angles);
-		JointValues numericalIK(const Pose &pose, const JointValues &maxAngle);
+	Vector3d calcMaxRot(const Vector3d & position);
+	Vector3d ForwardKin(const JointValues &angles);
+	JointValues numericalIK(const Pose &pose, const JointValues &maxAngle);
 
-	private:
+private:
 
-		void calcOrientationMatrix(double phi1, double phi5, double alpha, matrix::Matrix<double, 3, 3> & orientation);
+	void calcOrientationMatrix(double phi1, double phi5, double alpha, matrix::Matrix<double, 3, 3> & orientation);
 };
 
 #endif

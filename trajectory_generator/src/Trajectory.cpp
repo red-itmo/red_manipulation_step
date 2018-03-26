@@ -92,6 +92,7 @@ void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, cons
 {
 	JointValues currJntAng, currJntAngVel, currJntAngAcc;
 	JointValues prevAngles, currAngles, nextAngles, anglesDiff, zeroVec;
+	prevAngles.setAll(-1000);
 	zeroVec.setZero();
 	ArmKinematics solver;
 	double prevTime, currTime, nextTime;
@@ -141,8 +142,16 @@ void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, cons
 			offset = 0;
 		curConf.orientation(0) = theta - 0.1 - offset;
 		curRot = solver.numericalIK(curConf, maxRot);
+		//if error has occured
 		if(curRot(0)==-1000)
 			return;
+		makeYoubotArmOffsets(curRot);
+		//if the first iteration
+		if(prevAngles(0)==-1000)
+			prevAngles=curRot;
+		currJntAngVel = (curRot - prevAngles) / timeStep;
+		prevAngles = curRot;
+		qdotTra.push_back(currJntAngVel);
 		qTra.push_back(curRot);
 	}
 }
