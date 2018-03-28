@@ -1,0 +1,4 @@
+arm_kinematics/CertesianPose startPose
+arm_kinematics/CertesianPose endPose
+---
+bool feasible
