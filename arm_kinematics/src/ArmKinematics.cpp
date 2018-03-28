@@ -276,7 +276,7 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
 	goal.position(0) =  position(0) - d0x - d1x;
 	goal.position(1) = position(1);
 	goal.position(2) =  position(2) - d0z - d1z;
-	if (d23 + d4 < goal.position.norm())
+	if (d23 + d4 > goal.position.norm())
 	{
 		ROS_WARN("[ArmKinematics]Solution doesn't exist!");
 		return 0;

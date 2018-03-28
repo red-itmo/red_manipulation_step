@@ -13,9 +13,31 @@ find_package(catkin REQUIRED COMPONENTS
     trajectory_msgs
     trajectory_generator
     red_msgs
+    message_generation
+    std_msgs
+    geometry_msgs
 )
 
-catkin_package()
+add_service_files(
+    FILES
+    MoveLine.srv
+)
+
+generate_messages(
+	DEPENDENCIES
+	arm_kinematics
+	geometry_msgs
+	std_msgs
+)
+
+
+catkin_package(
+	CATKIN_DEPENDS 
+	geometry_msgs
+	message_runtime
+	std_msgs 
+	arm_kinematics	
+)
 
 ###########
 ## Build ##
@@ -59,5 +81,4 @@ target_link_libraries(move_by_camera
     youbot_manipulator
     ${catkin_LIBRARIES}
 )
-
 

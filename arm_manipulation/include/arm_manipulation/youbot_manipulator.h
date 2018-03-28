@@ -7,6 +7,7 @@
 #include <sensor_msgs/JointState.h>
 #include <arm_kinematics/PoseArray.h>
 #include <arm_kinematics/ManipulatorPose.h>
+#include <arm_manipulation/MoveLine.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -66,7 +67,7 @@ class YoubotManipulator
         bool graspObject(const Pose & p);
         bool putObject(const Pose & p);
         bool goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
-        bool trajectoryMove(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
+        bool trajectoryMove(arm_manipulation::MoveLine::Request & req, arm_manipulation::MoveLine::Response & res);
         void stateCallback(const sensor_msgs::JointStatePtr & msg);
         bool checkAchievementOfPosition(const JointValues & desiredValues);
 

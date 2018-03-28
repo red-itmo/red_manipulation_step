@@ -5,8 +5,11 @@
 YoubotManipulator::YoubotManipulator(ros::NodeHandle & nodeHandle)
     :nh(nodeHandle)
 {
-    nh.param("/trajectory_test/youBotDriverCycleFrequencyInHz", lr, 100.0);
-    nh.param("/trajectory_test/timeStep", timeStep, 0.05);
+    nh.param("youBotDriverCycleFrequencyInHz", lr, 100.0);
+    nh.param("timeStep", timeStep, 0.05);
+    nh.param("max_Vel", maxVel, 0.03);
+    nh.param("max_Accel", maxAccel, 0.1);
+    ROS_INFO_STREAM("[Arm Manipulation] Max Vel: " << maxVel << " Max Accel: " << maxAccel <<" TimeStep: " << timeStep);
 }
 
 YoubotManipulator::~YoubotManipulator() {}
@@ -150,6 +153,7 @@ void YoubotManipulator::stateCallback(const sensor_msgs::JointStatePtr & msg) {
         stateValues(i) = msg->position[i];
     }
 }
+
 bool YoubotManipulator::goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res)
 {
     ROS_DEBUG_NAMED("arm_manipulation","[Arm Manipulation] goToPose");
@@ -238,20 +242,9 @@ bool YoubotManipulator::putObject(const Pose & p)
 
 void YoubotManipulator::moveArmLoop()
 {
-    nh.param("/arm_manipulation/max_Vel", maxVel, 0.03);
-    if (!nh.hasParam("/arm_manipulation/max_vel"))
-      {
-        ROS_WARN("[Arm Manipulation]No param '/arm_manipulation/max_vel', setting 0.03");
-      }
-
-    nh.param("/arm_manipulation/max_Accel", maxAccel, 0.1);
-    if (!nh.hasParam("/arm_manipulation/max_accel"))
-      {
-        ROS_WARN("[Arm Manipulation]No param '/arm_manipulation/max_Accel', setting 0.1");
-      }
 
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /grasp_object...");
-    trajectoryServer = nh.advertiseService("grasp_object", &YoubotManipulator::trajectoryMove, this);
+    trajectoryServer = nh.advertiseService("MoveLine", &YoubotManipulator::trajectoryMove, this);
 
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /manipulator_pose...");
     poseServer = nh.advertiseService("manipulator_pose", &YoubotManipulator::goToPose, this);

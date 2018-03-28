@@ -2,26 +2,25 @@
 #include <arm_kinematics/KinematicConstants.h>
 #include <trajectory_generator/TrajectoryGenerator.h>
 
-bool YoubotManipulator::trajectoryMove(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res)
+bool YoubotManipulator::trajectoryMove(arm_manipulation::MoveLine::Request & req, arm_manipulation::MoveLine::Response & res)
 {
-    Pose p;
-    p.position(0) = req.pose.position[0];
-    p.position(1) = req.pose.position[1];
-    p.position(2) = req.pose.position[2];
-    p.orientation(0) = req.pose.orientation[0];
-    p.orientation(1) = req.pose.orientation[1];
-    p.orientation(2) = req.pose.orientation[2];
+    Pose startPose;
+    startPose.position(0) = req.startPose.position[0];
+    startPose.position(1) = req.startPose.position[1];
+    startPose.position(2) = req.startPose.position[2];
+    startPose.orientation(0) = req.startPose.orientation[0];
+    startPose.orientation(1) = req.startPose.orientation[1];
+    startPose.orientation(2) = req.startPose.orientation[2];
 
-    if (req.task == 1) {
-        res.feasible = graspObject(p);
-        return true;
-    }
-    else if (req.task == 2) {
-        res.feasible = putObject(p);
-        return true;
-    }
-    else
-        ROS_WARN("task: 1 or 2");
+    Pose endPose;
+    endPose.position(0) = req.endPose.position[0];
+    endPose.position(1) = req.endPose.position[1];
+    endPose.position(2) = req.endPose.position[2];
+    endPose.orientation(0) = req.endPose.orientation[0];
+    endPose.orientation(1) = req.endPose.orientation[1];
+    endPose.orientation(2) = req.endPose.orientation[2];
+
+    moveToLineTrajectory(startPose, endPose);
 }
 
 void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose & endPose)

@@ -54,7 +54,13 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
 	// Calculate trajectory times
 	t1 = maxVel / maxAccel;
 	t2 = positionDiff.norm() / maxVel;
+	//if no difference between start and end positions
+	if(t2==0){
+		ROS_WARN_STREAM("Start and end pose coincide!");
+		t2=t1+0.01;
+	}
 	t3 = t2 + t1;
+
 
 	ROS_INFO_STREAM("[Trajectory] Time variables (" << t1 << ", " << t2 << ", " << t3 << ")");
 
@@ -88,7 +94,7 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
 	ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:"<<rotTra.size());
 }
 
-void Trajectory::convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, const double timeStep)
+void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose, const double timeStep)
 {
 	JointValues currJntAng, currJntAngVel, currJntAngAcc;
 	JointValues prevAngles, currAngles, nextAngles, anglesDiff, zeroVec;
@@ -167,15 +173,15 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
 		trajectory_msgs::JointTrajectoryPoint point;
 
 		currJntAng = qTra[p];
-		currJntAngAcc = qdotTra[p];
-		currJntAngVel = qdotdotTra[p];
+		currJntAngVel = qdotTra[p];
+		//currJntAngAcc = qdotdotTra[p];
 
 		for (size_t i = 0; i < 5; ++i) {
 			point.positions.push_back(currJntAng(i));
 			// ROS_DEBUG_ONCE("[trajectory]Publishing trajectory angles:");
 			// ROS_DEBUG("[trajectory]%f",currJntAng(i));
-			point.velocities.push_back(currJntAngAcc(i));
-			point.accelerations.push_back(currJntAngVel(i));
+			point.velocities.push_back(currJntAngVel(i));
+			point.accelerations.push_back(currJntAngAcc(i));
 			point.time_from_start = ros::Duration(p * timeStep);
 		}
 		trajectory.points.push_back(point);
@@ -189,4 +195,24 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
 		jointName << "arm_joint_" << (i + 1);
 		trajectory.joint_names[i] = jointName.str();
 	}
+}
+
+bool Trajectory::check_feasible(const Pose startPose, Pose endPose)
+{
+	ArmKinematics solver;
+	JointValues maxRot;
+    maxRot(1) = M_PI / 3;
+	maxRot(2) = M_PI / 6;
+	maxRot(3) = M_PI / 6;
+
+    if (solver.numericalIK(startPose, maxRot)(0)==-1000) {
+        ROS_ERROR_STREAM("Solution start pose not found!");
+        return false;
+    }
+    if (solver.numericalIK(endPose, maxRot)(0)==-1000) {
+        ROS_ERROR_STREAM("Solution end pose not found!");
+        return false;
+    }
+    ROS_INFO_STREAM("Check ok");
+    return true;
 }

@@ -15,12 +15,14 @@ public:
 	void convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, const double timeStep);
 	void generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajectory);
 	void exponencialMovingAvarage(std::vector<JointValues> & data, std::vector<JointValues> & movingAvarage, const double alpha);
+	bool check_feasible(const Pose startPose, Pose endPose);
 
 	std::vector<JointValues> qTra, qdotTra, qdotdotTra, ema;
 	std::vector<Vector3d> posTra, velTra, accTra, rotTra;
 
 	std::vector<double> time;
 private:
+
 	double getVel(double time);
 	Vector3d getRotVel(double time);
 	double t1, t2, t3, maxVel, maxAccel;
