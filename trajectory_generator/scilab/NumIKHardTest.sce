@@ -1,4 +1,3 @@
-
 clear();
 directory = get_absolute_file_path("NumIKHardTest.sce");
 exec(directory + "math.sce", -1);
@@ -48,7 +47,7 @@ else
     ax = h.children;
 end
 
-initConfiguration = [0.3; 0; 0.1; %pi; 0];
+initConfiguration = [-0.3; 0; 0.1; -%pi; 0];
 endConfiguration = [0.3; 0; -0.05; %pi; 0];
 maxVel = 0.1; maxAccel = 0.5;
 timeStep = 0.02;
@@ -99,7 +98,6 @@ for i = 1:T;
         offset = 0;
     end;
     poses(4, i) = theta - 0.1 - offset;
-	
     [q_curr, err, info] = numIK(poses(:, i), maxRot);
     q_traj = [q_traj, q_curr];
     q_traj2 = [q_traj2, (IK(poses(1:3, i), getR(0, poses(4, i), 0), [0, 1]))];

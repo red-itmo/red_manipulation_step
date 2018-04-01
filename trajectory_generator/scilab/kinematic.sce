@@ -18,6 +18,7 @@ d3 = [0; 0; 0.135];
 d4 = [0; 0; 0.13];
 griperLength = 0.105;
 d5 = [0; 0; griperLength];
+d = d4(3);
 
 // P - position [x; y; z]
 // R - rotation.[psi1, theta, psi2]
@@ -45,7 +46,7 @@ function q=IK(P, R, config)
 //    if R(3, 3) > 10e-4 then
     theta = atan(cos(psi1)*R(1, 3) - sin(psi1)*R(2, 3), R(3, 3));
 //    else
-//        theta = 
+//        theta =
 //    end
     psi2 = - atan(sin(psi1)*R(1, 1) + cos(psi1)*R(2, 1), sin(psi1)*R(1, 2) + cos(psi1)*R(2, 2));
     q(5) = psi2;
@@ -88,7 +89,7 @@ endfunction
 // err - error code
 // err - 1: Solution not exists
 // err - 2: Angles out of range
-function [q, err, other] = numIK(pose, q_i)
+function [q, err, other] = numIK(v, q_i)
     // Error code:
     // 1 - Any solution cant be found 
 
@@ -96,18 +97,16 @@ function [q, err, other] = numIK(pose, q_i)
     q = zeros(DOF, 1);
     q = q_i;
     other = [];
-    iter_num = 50;
+    iter_num = 1000;
 
     k = 0.05;
     iter = 0;
-    difference = pose - [FK(q); q(2) + q(3) + q(4); q(5)];
-
-    while (norm(difference) > 10e-10 & iter < iter_num) // (norm(e) > 10e-4) & 
+    e = v - [FK(q); q(2) + q(3) + q(4); q(5)];
+    while (norm(e) > 10e-10 & iter < iter_num) // (norm(e) > 10e-4) & 
         j = J(q);
-        dq = inv(j'*j + k^2*eye(DOF, DOF))*j'*difference;
-
+        dq = inv(j'*j + k^2*eye(DOF, DOF))*j'*e;
         q = q + dq;
-        difference = (pose - [FK(q); q(2) + q(3) + q(4); q(5)]);
+        e = (v - [FK(q); q(2) + q(3) + q(4); q(5)]);
         iter = iter + 1;
     end
 
@@ -123,7 +122,7 @@ function [q, err, other] = numIK(pose, q_i)
         err = 2;
         return;
     end
-    
+
     q = round(q*10000)/10000;
     err = 0;
 endfunction
@@ -167,49 +166,47 @@ function [P, R] = FK(q)
     P = zeros(3);
     R = zeros(3, 3);
 
-    psi1 = q(1); 
+    psi1 = q(1);
     theta = q(2) + q(3) + q(4);
     psi2 = q(5);
 
-    d = d4(3);// + d5(3);
     plane = [
         d2(3)*sin(q(2)) + d3(3)*sin(q(2) + q(3)) + d*sin(q(2) + q(3) + q(4));
         0;
         d2(3)*cos(q(2)) + d3(3)*cos(q(2) + q(3)) + d*cos(q(2) + q(3) + q(4));
     ]
-    P = d0 + Rz(psi1) * (plane + d1);
-    R = getR(psi1, theta, psi2);
+    P = d0 + Rz(-psi1) * (plane + d1);
+    R = getR(-psi1, theta, psi2);
 
 endfunction
 
 function R = getR(psi1, theta, psi2)
-    R = Rz(psi1)*Ry(-theta)*Rz(psi2);
+    R = Rz(-psi1)*Ry(-theta)*Rz(psi2);
 endfunction
 function j = J(q)
     j = zeros(5, 5);
-    d = d4;// + d5;
 
-    j(1, 1) = -sin(q(1))*(d1(1)+d2(3)*sin(q(2))+d3(3)*sin(q(3)+q(2))+d(3)*sin(q(4)+q(3)+q(2)));
-    j(2, 1) = -cos(q(1))*(d1(1)+d2(3)*sin(q(2))+d3(3)*sin(q(3)+q(2))+d(3)*sin(q(4)+q(3)+q(2)));
+    j(1, 1) = -sin(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + d*sin(q(4)+q(3)+q(2)));
+    j(2, 1) = cos(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + d*sin(q(4)+q(3)+q(2)));
     j(3, 1) = 0;
     j(4, 1) = 0;
     j(5, 1) = 0;
 
-    j(1, 2) = cos(q(1))*(d(3)*cos(q(4)+q(3)+q(2))+d3(3)*cos(q(3)+q(2))+d2(3)*cos(q(2)));
-    j(2, 2) = -sin(q(1))*(d2(3)*cos(q(2))+d3(3)*cos(q(3)+q(2))+d(3)*cos(q(4)+q(3)+q(2)));
-    j(3, 2) = -d(3)*sin(q(4)+q(3)+q(2))-d3(3)*sin(q(3)+q(2))-d2(3)*sin(q(2));
+    j(1, 2) = cos(q(1))*(d*cos(q(4)+q(3)+q(2)) + d3(3)*cos(q(3)+q(2)) + d2(3)*cos(q(2)));
+    j(2, 2) = sin(q(1))*(d2(3)*cos(q(2)) + d3(3)*cos(q(3)+q(2)) + d*cos(q(4)+q(3)+q(2)));
+    j(3, 2) = -d*sin(q(4)+q(3)+q(2)) - d3(3)*sin(q(3)+q(2)) - d2(3)*sin(q(2));
     j(4, 2) = 1;
     j(5, 2) = 0;
 
-    j(1, 3) = cos(q(1))*(d(3)*cos(q(4)+q(3)+q(2))+d3(3)*cos(q(3)+q(2)));
-    j(2, 3) = -sin(q(1))*(d3(3)*cos(q(3)+q(2))+d(3)*cos(q(4)+q(3)+q(2)));
-    j(3, 3) = -d(3)*sin(q(4)+q(3)+q(2))-d3(3)*sin(q(3)+q(2));
+    j(1, 3) = cos(q(1))*(d*cos(q(4)+q(3)+q(2)) + d3(3)*cos(q(3)+q(2)));
+    j(2, 3) = sin(q(1))*(d3(3)*cos(q(3)+q(2)) + d*cos(q(4)+q(3)+q(2)));
+    j(3, 3) = -d*sin(q(4)+q(3)+q(2)) - d3(3)*sin(q(3)+q(2));
     j(4, 3) = 1;
     j(5, 3) = 0;
 
-    j(1, 4) = d(3)*cos(q(1))*cos(q(4)+q(3)+q(2));
-    j(2, 4) = -d(3)*sin(q(1))*cos(q(4)+q(3)+q(2));
-    j(3, 4) = -d(3)*sin(q(4)+q(3)+q(2));
+    j(1, 4) = d*cos(q(1))*cos(q(4)+q(3)+q(2));
+    j(2, 4) = d*sin(q(1))*cos(q(4)+q(3)+q(2));
+    j(3, 4) = -d*sin(q(4)+q(3)+q(2));
     j(4, 4) = 1;
     j(5, 4) = 0;
 
@@ -218,6 +215,35 @@ function j = J(q)
     j(3, 5) = 0;
     j(4, 5) = 0;
     j(5, 5) = 1;
+//     j(1, 1) = -sin(q(1))*(d1(1)+d2(3)*sin(q(2))+d3(3)*sin(q(3)+q(2))+d*sin(q(4)+q(3)+q(2)));
+//     j(2, 1) = -cos(q(1))*(d1(1)+d2(3)*sin(q(2))+d3(3)*sin(q(3)+q(2))+d*sin(q(4)+q(3)+q(2)));
+//     j(3, 1) = 0;
+//     j(4, 1) = 0;
+//     j(5, 1) = 0;
+//
+//     j(1, 2) = cos(q(1))*(d*cos(q(4)+q(3)+q(2))+d3(3)*cos(q(3)+q(2))+d2(3)*cos(q(2)));
+//     j(2, 2) = -sin(q(1))*(d2(3)*cos(q(2))+d3(3)*cos(q(3)+q(2))+d*cos(q(4)+q(3)+q(2)));
+//     j(3, 2) = -d*sin(q(4)+q(3)+q(2))-d3(3)*sin(q(3)+q(2))-d2(3)*sin(q(2));
+//     j(4, 2) = 1;
+//     j(5, 2) = 0;
+//
+//     j(1, 3) = cos(q(1))*(d*cos(q(4)+q(3)+q(2))+d3(3)*cos(q(3)+q(2)));
+//     j(2, 3) = -sin(q(1))*(d3(3)*cos(q(3)+q(2))+d*cos(q(4)+q(3)+q(2)));
+//     j(3, 3) = -d*sin(q(4)+q(3)+q(2))-d3(3)*sin(q(3)+q(2));
+//     j(4, 3) = 1;
+//     j(5, 3) = 0;
+//
+//     j(1, 4) = d*cos(q(1))*cos(q(4)+q(3)+q(2));
+//     j(2, 4) = -d*sin(q(1))*cos(q(4)+q(3)+q(2));
+//     j(3, 4) = -d*sin(q(4)+q(3)+q(2));
+//     j(4, 4) = 1;
+//     j(5, 4) = 0;
+//
+//     j(1, 5) = 0;
+//     j(2, 5) = 0;
+//     j(3, 5) = 0;
+//     j(4, 5) = 0;
+//     j(5, 5) = 1;
 
 endfunction
 function q_out = shiftAngles(q)
@@ -243,7 +269,16 @@ endfunction
 
 // VISUALIZATION
 function visualizationFK(q, axis, formating);
-
+	//if undefined
+	if axis==0 then
+		if length(get_figure_handle(1)) then
+		    h = get_figure_handle(1);
+		    axis = h.children;
+		else
+		    h = figure(1);
+		    axis = h.children;
+		end
+	end
     a = sca(axis);
     delete(a.children);
     d = d4(3);// + d5(3);
@@ -291,11 +326,11 @@ function animation(q_traj, n, sleep_time, axis)
         p = [p, p(:, 1) + [d2(3)*sin(q_traj(2, i)); d2(3)*cos(q_traj(2, i))]];
         p = [p, p(:, 2) + [d3(3)*sin(q_traj(2, i) + q_traj(3, i)); d3(3)*cos(q_traj(2, i) + q_traj(3, i))]];
         p = [p, p(:, 3) + [d*sin(q_traj(2, i) + q_traj(3, i) + q_traj(4, i)); d*cos(q_traj(2, i) + q_traj(3, i) + q_traj(4, i))]];
-    
+
         axis.children(3).children.data = [p(1, 1), p(2, 1); p(1, 2), p(2, 2)];
         axis.children(2).children.data = [p(1, 2), p(2, 2); p(1, 3), p(2, 3)];
         axis.children(1).children.data = [p(1, 3), p(2, 3); p(1, 4), p(2, 4)];
-        sleep(sleep_time);
+        sleep(sleep_time)
         drawnow();
     end
 endfunction
