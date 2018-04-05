@@ -50,13 +50,13 @@ function [time, vel, coord, rot] = workSpaceTraj(startPose, endPose, maxAccel, m
 
     vel = []; currVel = [];
     coord = []; currCoord = p_i;
-    rot = []; currRot = [theta_i; psi_i];
+    // rot = []; currRot = [theta_i; psi_i];
     time = (-5*timeStep:timeStep:t3 + 5*timeStep) + 5*timeStep;
     for t = -5*timeStep:timeStep:t3 + 5*timeStep
         currVel = movementDirection*getVel(t);
         vel = [vel, currVel];
         coord = [coord, currCoord];
-        rot = [rot, currRot]
+        // rot = [rot, currRot]
         currCoord = currCoord + timeStep/2 * (currVel + movementDirection*getVel(t + timeStep));
         currRot = currRot + timeStep/2 * (getRotVel(t) + getRotVel(t + timeStep));
     end

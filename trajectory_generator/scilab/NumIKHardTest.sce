@@ -21,7 +21,7 @@ function ang = calcMaxRot(pos)
     cosq4 = (norm(goal)^2 - d23^2 - d4(3)^2)/(2*d23*d4(3));
     q4 = atan(sqrt(1 - cosq4^2), cosq4);
     q2 = atan(goal(1), goal(3)) - atan(d4(3)*sin(q4), d23 + d4(3)*cos(q4));
-    
+
     q3 = 0;
     if q4 > jointLimits(4, 2) then
         q4 = jointLimits(4, 2);
@@ -122,14 +122,14 @@ end
 for i = 1:3
     n = size(q_traj, 2);
     subplot(3, 1, i);
-    
+
     plot(time(1:n), q_traj(i + 1, :));
-	
+
     e = gce();
     e.children.thickness = 2;
     e.children.foreground = color("blue");
     e.children.line_style = 1;
-    
+
     plot(time(1:n), q_traj2(i + 1, :));
     e = gce();
     e.children.thickness = 2;
