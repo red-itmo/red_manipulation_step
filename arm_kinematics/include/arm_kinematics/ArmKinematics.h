@@ -38,7 +38,7 @@ public:
 	matrix::SquareMatrix<double, 5> Jacobian(const JointValues &angles);
 	Vector3d calcMaxRot(const Vector3d & position);
 	Vector3d ForwardKin(const JointValues &angles);
-	JointValues numericalIK(const Pose &pose, const JointValues &maxAngle);
+	JointValues numericalIK(const Pose &pose, JointValues q);
 
 private:
 

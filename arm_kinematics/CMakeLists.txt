@@ -54,6 +54,9 @@ target_link_libraries(arm_kinematics
     ${catkin_LIBRARIES}
 )
 
+add_executable(test_num_ik tests/TestNumIK.cpp)
+target_link_libraries(test_num_ik arm_kinematics)
+
 #install binary and lib
 install(TARGETS arm_kinematics
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
