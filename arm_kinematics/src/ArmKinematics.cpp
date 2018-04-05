@@ -324,13 +324,13 @@ Vector3d ArmKinematics::ForwardKin(const JointValues &angles)
 	plane(0) = d2 * sin(angles(1)) + d3 * sin(angles(1) + angles(2)) + d4 * sin(angles(1) + angles(2) + angles(3));
 	plane(1) = 0;
 	plane(2) = d2 * cos(angles(1)) + d3 * cos(angles(1) + angles(2)) + d4 * cos(angles(1) + angles(2) + angles(3));
-	calcOrientationMatrix(angles(0), 0, 0, rotz);
+	calcOrientationMatrix(-angles(0), 0, 0, rotz);
 	pose = d0vec + rotz * (plane + d1vec);
 
 	return pose;
 }
 
-matrix::SquareMatrix<double, 5> Jacobian(const JointValues &angles)
+matrix::SquareMatrix<double, 5> ArmKinematics::Jacobian(const JointValues &angles)
 {
 	matrix::SquareMatrix<double, 5> j = matrix::zeros<double, 5, 5>();
 	Vector3d d;
@@ -339,25 +339,25 @@ matrix::SquareMatrix<double, 5> Jacobian(const JointValues &angles)
 	d(2) = d4;
 
 	j(0, 0) = -sin(angles(0)) * (d1x + d2 * sin(angles(1)) + d3 * sin(angles(2) + angles(1)) + d(2) * sin(angles(3) + angles(2) + angles(1)));
-	j(1, 0) = -cos(angles(0)) * (d1x + d2 * sin(angles(1)) + d3 * sin(angles(2) + angles(1)) + d(2) * sin(angles(3) + angles(2) + angles(1)));
+	j(1, 0) = cos(angles(0)) * (d1x + d2 * sin(angles(1)) + d3 * sin(angles(2) + angles(1)) + d(2) * sin(angles(3) + angles(2) + angles(1)));
 	j(2, 0) = 0;
 	j(3, 0) = 0;
 	j(4, 0) = 0;
 
 	j(0, 1) = cos(angles(0)) * (d(2) * cos(angles(3) + angles(2) + angles(1)) + d3 * cos(angles(2) + angles(1)) + d2 * cos(angles(1)));
-	j(1, 1) = -sin(angles(0)) * (d2 * cos(angles(1)) + d3 * cos(angles(2) + angles(1)) + d(2) * cos(angles(3) + angles(2) + angles(1)));
+	j(1, 1) = sin(angles(0)) * (d2 * cos(angles(1)) + d3 * cos(angles(2) + angles(1)) + d(2) * cos(angles(3) + angles(2) + angles(1)));
 	j(2, 1) = -d(2) * sin(angles(3) + angles(2) + angles(1)) - d3 * sin(angles(2) + angles(1)) - d2 * sin(angles(1));
 	j(3, 1) = 1;
 	j(4, 1) = 0;
 
 	j(0, 2) = cos(angles(0)) * (d(2) * cos(angles(3) + angles(2) + angles(1)) + d3 * cos(angles(2) + angles(1)));
-	j(1, 2) = -sin(angles(0)) * (d3 * cos(angles(2) + angles(1)) + d(2) * cos(angles(3) + angles(2) + angles(1)));
+	j(1, 2) = sin(angles(0)) * (d3 * cos(angles(2) + angles(1)) + d(2) * cos(angles(3) + angles(2) + angles(1)));
 	j(2, 2) = -d(2) * sin(angles(3) + angles(2) + angles(1)) - d3 * sin(angles(2) + angles(1));
 	j(3, 2) = 1;
 	j(4, 2) = 0;
 
 	j(0, 3) = d(2) * cos(angles(0)) * cos(angles(3) + angles(2) + angles(1));
-	j(1, 3) = -d(2) * sin(angles(0)) * cos(angles(3) + angles(2) + angles(1));
+	j(1, 3) = d(2) * sin(angles(0)) * cos(angles(3) + angles(2) + angles(1));
 	j(2, 3) = -d(2) * sin(angles(3) + angles(2) + angles(1));
 	j(3, 3) = 1;
 	j(4, 3) = 0;
@@ -379,12 +379,20 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, const JointValues &maxA
 	JointValues iterMaxAngle = maxAngle;
 	//actually joint values are not stored here
 	JointValues matrixFK, poseAndRot, difference, dq;
-	dq.setZero();
 	for (int i = 0; i < 3; ++i) {
+		if (std::isnan(pose.position(i))){
+			ROS_FATAL("Nan in position!!");
+		}
 		poseAndRot(i) = pose.position(i);
 	}
+	if (std::isnan(pose.orientation(0)) || std::isnan(pose.orientation(1))){
+			ROS_FATAL("Nan in orientation!!");
+		}
 	poseAndRot(3) = pose.orientation(0);
 	poseAndRot(4) = pose.orientation(1);
+
+	poseAndRot.print();
+	// return iterMaxAngle;
 
 	Vector3d FKoutput = ForwardKin(iterMaxAngle);
 	matrixFK(0) = FKoutput(0);
@@ -393,11 +401,13 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, const JointValues &maxA
 	matrixFK(3) = iterMaxAngle(1) + iterMaxAngle(2) + iterMaxAngle(3);
 	matrixFK(4) = iterMaxAngle(4);
 	difference = poseAndRot - matrixFK;
-
+	// difference.print();
 	while (difference.norm() > 10e-10 && iter < iter_num)
 	{
 
 		j = Jacobian(iterMaxAngle);
+		// j.print();
+		// return iterMaxAngle;
 		temp=j.transpose() * j + k * k * matrix::eye<double,5>();
 		temp=temp.I();
 		dq =temp  * j.transpose() * difference;
@@ -409,6 +419,7 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, const JointValues &maxA
 		matrixFK(2) = FKoutput(2);
 		matrixFK(3) = iterMaxAngle(1) + iterMaxAngle(2) + iterMaxAngle(3);
 		matrixFK(4) = iterMaxAngle(4);
+		FKoutput.print();
 		difference = poseAndRot - matrixFK;
 		iter++;
 	}

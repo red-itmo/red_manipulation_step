@@ -41,6 +41,7 @@ Vector3d Trajectory::getRotVel(double time)
 	rotVel(2) = 0;
 	return rotVel;
 }
+
 void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep)
 {
 	this->maxAccel = maxAccel;
@@ -90,6 +91,7 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
 		rotTra.push_back(currRot);
 		currCoord += timeStep / 2 * (currVel + movementDirection * getVel(currentTime + timeStep));
 		currRot += timeStep / 2 * (getRotVel(currentTime) + getRotVel(currentTime + timeStep));
+
 	}
 	ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:"<<rotTra.size());
 }
@@ -174,6 +176,7 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
 
 		currJntAng = qTra[p];
 		currJntAngVel = qdotTra[p];
+		//TODO acceleration
 		//currJntAngAcc = qdotdotTra[p];
 
 		for (size_t i = 0; i < 5; ++i) {

@@ -45,15 +45,16 @@ int main(int argc, char *argv[])
     Pose startPose, endPose;
     std::vector<JointValues> sol;
     ArmKinematics solver;
+
     Vector3d zeros, smoothPos;
     double alpha1, alpha2;
 
     startPose.position(0) = initPosition[0];
     startPose.position(1) = initPosition[1];
     startPose.position(2) = initPosition[2];
-    startPose.orientation(0) = 3.1415;
+    startPose.orientation(0) = orientation[0];
     startPose.orientation(1) = 0;
-    startPose.orientation(2) = orientation[0];
+    startPose.orientation(2) = 0;
 
     JointValues maxRot;
     maxRot(1) = M_PI / 3;
@@ -68,9 +69,9 @@ int main(int argc, char *argv[])
     endPose.position(0) = endPosition[0];
     endPose.position(1) = endPosition[1];
     endPose.position(2) = endPosition[2];
-    endPose.orientation(0) = 3.1415;
+    endPose.orientation(0) = orientation[1];
     endPose.orientation(1) = 0;
-    endPose.orientation(2) = orientation[1];
+    endPose.orientation(2) = 0;
 
     if (solver.numericalIK(endPose, maxRot)(0)==-1000) {
         ROS_ERROR_STREAM("Solution end pose not found!");

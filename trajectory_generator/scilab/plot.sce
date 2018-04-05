@@ -18,7 +18,8 @@ filePath="~/vrepWS/src/red_manipulation_step/trajectory_generator/logs/JointSpac
 results=read(filePath, -1, 11);
 RAD2DEG = 180/%pi;
 RAD2DEG = 1;
-i=6;
+i=1;//angles
+//i=6;//speed
 angle=[results(:,i)*RAD2DEG,...
 results(:,i+1)*RAD2DEG,...
 results(:,i+2)*RAD2DEG,...

@@ -35,6 +35,7 @@ public:
 	// Calc velocities and accelerations
 	void calcKinematicsParams(const Vector3d & linearVelocities, const JointValues & jointAngles, JointValues & jointAngVel, JointValues & jointAngAcc);
 
+	matrix::SquareMatrix<double, 5> Jacobian(const JointValues &angles);
 	Vector3d calcMaxRot(const Vector3d & position);
 	Vector3d ForwardKin(const JointValues &angles);
 	JointValues numericalIK(const Pose &pose, const JointValues &maxAngle);

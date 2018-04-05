@@ -92,7 +92,6 @@ endfunction
 function [q, err, other] = numIK(v, q_i)
     // Error code:
     // 1 - Any solution cant be found 
-
     dq = zeros(DOF, 1);
     q = zeros(DOF, 1);
     q = q_i;
@@ -104,6 +103,7 @@ function [q, err, other] = numIK(v, q_i)
     e = v - [FK(q); q(2) + q(3) + q(4); q(5)];
     while (norm(e) > 10e-10 & iter < iter_num) // (norm(e) > 10e-4) & 
         j = J(q);
+disp(j);
         dq = inv(j'*j + k^2*eye(DOF, DOF))*j'*e;
         q = q + dq;
         e = (v - [FK(q); q(2) + q(3) + q(4); q(5)]);
@@ -185,7 +185,6 @@ function R = getR(psi1, theta, psi2)
 endfunction
 function j = J(q)
     j = zeros(5, 5);
-
     j(1, 1) = -sin(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + d*sin(q(4)+q(3)+q(2)));
     j(2, 1) = cos(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + d*sin(q(4)+q(3)+q(2)));
     j(3, 1) = 0;
