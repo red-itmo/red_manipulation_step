@@ -1,6 +1,6 @@
 #include <trajectory_generator/TrajectoryGenerator.h>
 
-TrajectoryGenerator::TrajectoryGenerator(const double maxVel, const double maxAccel, const double dt) 
+TrajectoryGenerator::TrajectoryGenerator(const double maxVel, const double maxAccel, const double dt)
 : maxVelocity(maxVel), maxAcceleration(maxAccel), timeStep(dt)
 {}
 
@@ -22,10 +22,12 @@ void TrajectoryGenerator::setMaxVelocity(const double maxVel)
 {
 	maxVelocity = maxVel;
 }
+
 void TrajectoryGenerator::setMaxAcceleration(const double maxAccel)
 {
 	maxAcceleration = maxAccel;
 }
+
 void TrajectoryGenerator::setTimeStep(const double dt)
 {
 	timeStep = dt;

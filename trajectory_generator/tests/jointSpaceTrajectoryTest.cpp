@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     logFile.open(file.c_str());
 
     if (!logFile.is_open())
-    	ROS_WARN_STREAM("file "<< filename.str() <<" is not opened");
+        ROS_WARN_STREAM("file "<< filename.str() <<" is not opened");
 
     // TEST
     // for (uint i = 0; i < traj.qTra.size(); ++i) {
