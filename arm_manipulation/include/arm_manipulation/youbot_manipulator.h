@@ -2,16 +2,14 @@
 #define YOUBOT_MANIPULATOR
 
 #include <ros/ros.h>
+#include <arm_kinematics/ArmKinematics.h>
 
-#include <brics_actuator/JointPositions.h>
-#include <sensor_msgs/JointState.h>
-#include <arm_kinematics/PoseArray.h>
-#include <arm_kinematics/ManipulatorPose.h>
-#include <arm_manipulation/MoveLine.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
+#include <brics_actuator/JointPositions.h>
+#include <sensor_msgs/JointState.h>
+#include <red_msgs/ArmPoses.h>
 
-#include <arm_kinematics/ArmKinematics.h>
 #include <actionlib/client/simple_action_client.h>
 
 typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> ActionClent;
@@ -64,10 +62,8 @@ class YoubotManipulator
         JointValues stateValues;
 
         // Callbacs
-        bool graspObject(const Pose & p);
-        bool putObject(const Pose & p);
-        bool goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res);
-        bool trajectoryMove(arm_manipulation::MoveLine::Request & req, arm_manipulation::MoveLine::Response & res);
+        bool goToPose(red_msgs::ArmPoses::Request & req, red_msgs::ArmPoses::Response & res);
+        bool trajectoryMove(red_msgs::ArmPoses::Request & req, red_msgs::ArmPoses::Response & res);
         void stateCallback(const sensor_msgs::JointStatePtr & msg);
         bool checkAchievementOfPosition(const JointValues & desiredValues);
 

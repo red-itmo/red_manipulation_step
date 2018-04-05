@@ -40,7 +40,7 @@ void YoubotManipulator::initActionClient(const double aMax, const double vMax, c
         << " Max Accel.: " << maxAccel);
 }
 
-bool YoubotManipulator::moveArm(const JointValues & angles) 
+bool YoubotManipulator::moveArm(const JointValues & angles)
 {
     ROS_INFO("[Arm Manipulation] moveArm");
     brics_actuator::JointPositions jointPositions;
@@ -48,7 +48,7 @@ bool YoubotManipulator::moveArm(const JointValues & angles)
         jointPositions = createArmPositionMsg(angles);
         armPublisher.publish(jointPositions);
         // ros::Duration(0.5).sleep();
-         
+
             if (!checkAchievementOfPosition(angles)) {
                 ROS_WARN("Position is not desired!");
                 return false;
@@ -64,7 +64,7 @@ bool YoubotManipulator::moveArm(const Pose & pose)
     Vector3d zeros, pos;
     ROS_INFO_STREAM("[Arm Manipulation] Position: (" << pose.position(0) << " " << pose.position(1) << " " << pose.position(2) << ")");
     ROS_INFO_STREAM("[Arm Manipulation] Orientation: (" << pose.orientation(0) << " " << pose.orientation(1) << " " << pose.orientation(2) << ")");
-    
+
     if (solver.solveFullyIK(pose, jointAngles)) {
         // Convert joint values
         // pos = solver.transformFromFrame5ToFrame0(jointAngles, zeros);
@@ -72,7 +72,7 @@ bool YoubotManipulator::moveArm(const Pose & pose)
         makeYoubotArmOffsets(jointAngles);
         return moveArm(jointAngles);
     }
-    else{ 
+    else{
         ROS_ERROR_STREAM("[Arm Manipulation] Solution NOT found!");
         return false;
     }
@@ -80,7 +80,7 @@ bool YoubotManipulator::moveArm(const Pose & pose)
 
 void YoubotManipulator::moveGripper(double jointValue)
 {
-    brics_actuator::JointPositions jointPositions = createGripperPositionMsg(jointValue); 
+    brics_actuator::JointPositions jointPositions = createGripperPositionMsg(jointValue);
     gripperPublisher.publish(jointPositions);
 }
 
@@ -88,7 +88,7 @@ void YoubotManipulator::moveGripper(double jointValue)
 brics_actuator::JointPositions createArmPositionMsg(const JointValues & jointAngles)
 {
     //ROS_INFO("createArmPositionMsg...");
-    brics_actuator::JointPositions jointPositions; 
+    brics_actuator::JointPositions jointPositions;
     brics_actuator::JointValue jointValue;
     for (size_t i = 0; i < 5; ++i) {
         jointValue.timeStamp = ros::Time::now();
@@ -96,7 +96,7 @@ brics_actuator::JointPositions createArmPositionMsg(const JointValues & jointAng
         jointName << "arm_joint_" << (i + 1);
         jointValue.joint_uri = jointName.str();
         jointValue.unit = "rad";
-        jointValue.value = jointAngles(i); 
+        jointValue.value = jointAngles(i);
         jointPositions.positions.push_back(jointValue);
     }
     return jointPositions;
@@ -113,14 +113,14 @@ brics_actuator::JointPositions createGripperPositionMsg(double jointValue)
     joint.value = jointValue;
     joint.joint_uri = "gripper_finger_joint_l";
     jointPositions.positions.push_back(joint);
-    
+
     joint.value = jointValue;
     joint.joint_uri = "gripper_finger_joint_r";
     jointPositions.positions.push_back(joint);
 
     return jointPositions;
 }
- 
+
 bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredValues) {
     ROS_INFO("[Arm Manipulation]Checking Achievement Of Position");
     JointValues currentValues, diff, prevValues;
@@ -136,10 +136,10 @@ bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredVa
             }
             //std::cout<<"."<<notChange;
         } while(notChange && nh.ok());
-        
+
         duration = ros::Time::now().sec - startTimeAchievement;
         if (duration>=WATCHDOG_TIME)
-        { 
+        {
             ROS_WARN("WATCHDOG timeout, inaccurate position!");
             return false;
         }
@@ -154,89 +154,23 @@ void YoubotManipulator::stateCallback(const sensor_msgs::JointStatePtr & msg) {
     }
 }
 
-bool YoubotManipulator::goToPose(arm_kinematics::ManipulatorPose::Request & req, arm_kinematics::ManipulatorPose::Response & res)
+bool YoubotManipulator::goToPose(red_msgs::ArmPoses::Request & req, red_msgs::ArmPoses::Response & res)
 {
     ROS_DEBUG_NAMED("arm_manipulation","[Arm Manipulation] goToPose");
     Pose pose;
-    pose.position(0) = req.pose.position[0];
-    pose.position(1) = req.pose.position[1];
-    pose.position(2) = req.pose.position[2];
-    pose.orientation(0) = req.pose.orientation[0];
-    pose.orientation(1) = req.pose.orientation[1];
-    pose.orientation(2) = req.pose.orientation[2];
-    
-    res.feasible = moveArm(pose);
-    return true;
-}
 
-bool YoubotManipulator::graspObject(const Pose & p)
-{
-    JointValues jointAngles;
-    // TODO add dynamic object height
-    double objectHeight = 0.05;
-
-    // First Step --------
-    Pose startPose = p;
-    Pose endPose = startPose;
-
-    startPose.position(2) += 0.05;
-    if (!solver.solveFullyIK(startPose, jointAngles)) {
-        ROS_FATAL_STREAM("Solution is not found (startPos): " << startPose.position(0) << ", " << startPose.position(1)  << ", " << startPose.position(2));
+    if (req.poses.size() != 1) {
+        ROS_ERROR("Size of input array is NOT VALID");
         return false;
     }
 
-    if (!solver.solveFullyIK(endPose, jointAngles)) {
-        ROS_FATAL_STREAM("Solution is not found (endPos): " << endPose.position(0) << ", " << endPose.position(1)  << ", " << endPose.position(2));
-        return false;
-    }
+    pose.position(0) = req.poses[0].x;
+    pose.position(1) = req.poses[0].y;
+    pose.position(2) = req.poses[0].z;
+    pose.orientation(1) = req.poses[0].theta;
+    pose.orientation(2) = req.poses[0].psi;
 
-    moveArm(startPose);
-    moveGripper(0.0115);
-     
-    ros::Duration(0.5).sleep();
-
-    moveToLineTrajectory(startPose, endPose);
-    moveGripper(0.0);
-     
-    ros::Duration(0.5).sleep();
-
-    // move up
-    moveToLineTrajectory(endPose, startPose);
-
-    return true;
-}
-
-bool YoubotManipulator::putObject(const Pose & p)
-{
-    JointValues jointAngles;
-    // TODO add dynamic object height
-    double objectHeight = 0.05;
-
-    // First Step --------
-    Pose startPose = p;
-    Pose endPose = startPose;
-
-    startPose.position(2) += 0.05;
-    if (!solver.solveFullyIK(startPose, jointAngles)) {
-        ROS_FATAL_STREAM("Solution is not found (startPos): " << startPose.position(0) << ", " << startPose.position(1)  << ", " << startPose.position(2));
-        return false;
-    }
-
-    if (!solver.solveFullyIK(endPose, jointAngles)) {
-        ROS_FATAL_STREAM("Solution is not found (endPos): " << endPose.position(0) << ", " << endPose.position(1)  << ", " << endPose.position(2));
-        return false;
-    }
-
-    moveArm(startPose);
-     
-    ros::Duration(0.5).sleep();
-
-    moveToLineTrajectory(startPose, endPose);
-    moveGripper(0.0115);
-     
-    ros::Duration(0.5).sleep();
-
-    moveToLineTrajectory(endPose, startPose);
+    res.error = moveArm(pose);
     return true;
 }
 
@@ -251,7 +185,7 @@ void YoubotManipulator::moveArmLoop()
 
     initArmTopics();
     initActionClient(maxAccel, maxVel, timeStep);
-    
+
     while(nh.ok()) {
         ros::spin();
     }

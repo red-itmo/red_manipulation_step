@@ -2,23 +2,26 @@
 #include <arm_kinematics/KinematicConstants.h>
 #include <trajectory_generator/TrajectoryGenerator.h>
 
-bool YoubotManipulator::trajectoryMove(arm_manipulation::MoveLine::Request & req, arm_manipulation::MoveLine::Response & res)
+bool YoubotManipulator::trajectoryMove(red_msgs::ArmPoses::Request & req, red_msgs::ArmPoses::Response & res)
 {
-    Pose startPose;
-    startPose.position(0) = req.startPose.position[0];
-    startPose.position(1) = req.startPose.position[1];
-    startPose.position(2) = req.startPose.position[2];
-    startPose.orientation(0) = req.startPose.orientation[0];
-    startPose.orientation(1) = req.startPose.orientation[1];
-    startPose.orientation(2) = req.startPose.orientation[2];
+    Pose startPose, endPose;
 
-    Pose endPose;
-    endPose.position(0) = req.endPose.position[0];
-    endPose.position(1) = req.endPose.position[1];
-    endPose.position(2) = req.endPose.position[2];
-    endPose.orientation(0) = req.endPose.orientation[0];
-    endPose.orientation(1) = req.endPose.orientation[1];
-    endPose.orientation(2) = req.endPose.orientation[2];
+    if (req.poses.size() != 2) {
+        ROS_ERROR("Size of input array is NOT VALID");
+        return false;
+    }
+
+    startPose.position(0) = req.poses[0].x;
+    startPose.position(1) = req.poses[0].y;
+    startPose.position(2) = req.poses[0].z;
+    startPose.orientation(1) = req.poses[0].theta;
+    startPose.orientation(2) = req.poses[0].psi;
+
+    endPose.position(0) = req.poses[1].x;
+    endPose.position(1) = req.poses[1].y;
+    endPose.position(2) = req.poses[1].z;
+    endPose.orientation(1) = req.poses[1].theta;
+    endPose.orientation(2) = req.poses[1].psi;
 
     moveToLineTrajectory(startPose, endPose);
 }
@@ -43,9 +46,9 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
 
     ROS_INFO("Going to initial position...");
     armPublisher.publish(jointPositions);
-     
+
     ros::Duration(2).sleep();
-    
+
     if (!gen.trajectory.points.empty())
     {
         ROS_INFO("Waiting for server...");
