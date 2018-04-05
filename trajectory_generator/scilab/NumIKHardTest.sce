@@ -57,20 +57,20 @@ poses = [posTra; rotTra];
 T = length(time);
 
 // Calculate rotation trajectory
-rotTraj = [];
-confFirst = poses(:, 1);
-confEnd = poses(:, T);
-angles1 = calcMaxRot(confFirst);
-angles2 = calcMaxRot(confEnd);
-theta1 = angles1(1) + angles1(2) + angles1(3); theta2 = angles2(1) + angles2(2) + angles2(3);
-if theta1 > %pi then
-    theta1 = %pi;
-end
-if theta2 > %pi then
-    theta2 = %pi;
-end
+// rotTraj = [];
+// confFirst = poses(:, 1);
+// confEnd = poses(:, T);
+// angles1 = calcMaxRot(confFirst);
+// angles2 = calcMaxRot(confEnd);
+// theta1 = angles1(1) + angles1(2) + angles1(3); theta2 = angles2(1) + angles2(2) + angles2(3);
+// if theta1 > %pi then
+//     theta1 = %pi;
+// end
+// if theta2 > %pi then
+//     theta2 = %pi;
+// end
 
-rotTraj = (theta2 - theta1)/time(T) * time + theta1;
+// rotTraj = (theta2 - theta1)/time(T) * time + theta1;
 
 
 ////// ** Convert work space to joint space
