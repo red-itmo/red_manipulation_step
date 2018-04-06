@@ -1,3 +1,5 @@
-/trajectory_test/a_m: 0.1
-/trajectory_test/v_m: 0.05
-/trajectory_test/time_step: 0.2
+startPosition: [0.26, 0, -0.1, 3.14, 0]
+endPosition: [0.26, 0.0, 0.1, 3.14, 0]
+a_m: 0.1
+v_m: 0.05
+time_step: 0.2

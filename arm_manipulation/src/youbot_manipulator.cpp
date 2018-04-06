@@ -6,10 +6,6 @@ YoubotManipulator::YoubotManipulator(ros::NodeHandle & nodeHandle)
     :nh(nodeHandle)
 {
     nh.param("youBotDriverCycleFrequencyInHz", lr, 100.0);
-    nh.param("timeStep", timeStep, 0.05);
-    nh.param("max_Vel", maxVel, 0.03);
-    nh.param("max_Accel", maxAccel, 0.1);
-    ROS_INFO_STREAM("[Arm Manipulation] Max Vel: " << maxVel << " Max Accel: " << maxAccel <<" TimeStep: " << timeStep);
 }
 
 YoubotManipulator::~YoubotManipulator() {}
@@ -25,10 +21,10 @@ void YoubotManipulator::initArmTopics()
     stateSubscriber = nh.subscribe("/arm_1/joint_states", 10, &YoubotManipulator::stateCallback, this);
 }
 
-void YoubotManipulator::initActionClient(const double aMax, const double vMax, const double timeStep)
+void YoubotManipulator::initActionClient(const double maxAccel=0.1, const double maxVel=0.05, const double timeStep=0.05)
 {
-    maxAccel = aMax;
-    maxVel = vMax;
+    this->maxAccel = maxAccel;
+    this->maxVel = maxVel;
     this->timeStep = timeStep;
 
     ROS_INFO_STREAM("[Arm Manipulation] Load ActionClient arm_1/arm_controller/velocity_joint_trajecotry");
@@ -177,15 +173,14 @@ bool YoubotManipulator::goToPose(red_msgs::ArmPoses::Request & req, red_msgs::Ar
 
 void YoubotManipulator::moveArmLoop()
 {
-
-    ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /grasp_object...");
+    ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /MoveLine...");
     trajectoryServer = nh.advertiseService("MoveLine", &YoubotManipulator::trajectoryMove, this);
 
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /manipulator_pose...");
     poseServer = nh.advertiseService("manipulator_pose", &YoubotManipulator::goToPose, this);
 
     initArmTopics();
-    initActionClient(maxAccel, maxVel, timeStep);
+    initActionClient();
 
     while(nh.ok()) {
         ros::spin();

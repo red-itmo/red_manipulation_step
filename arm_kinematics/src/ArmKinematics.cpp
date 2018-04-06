@@ -352,26 +352,21 @@ matrix::SquareMatrix<double, 5> ArmKinematics::Jacobian(const JointValues &angle
 
 JointValues ArmKinematics::numericalIK(const Pose &pose, JointValues q)
 {
-    int iter_num = 1000, iter = 0;
+    int iter_num = 100, iter = 0;
     matrix::SquareMatrix<double, 5> j, temp;
     double k = 0.05;
 
-    // Actually joint values are not stored here
+    // Actally joint values are not stored here
+    //Used just for calculations
     JointValues matrixFK, poseAndRot, error, dq;
 
     // Fill vector for IK
     for (int i = 0; i < 3; ++i) {
-        if (std::isnan(pose.position(i))){
-            ROS_FATAL("Nan in position!!");
-        }
         poseAndRot(i) = pose.position(i);
-    }
-    if (std::isnan(pose.orientation(0)) || std::isnan(pose.orientation(1))) {
-            ROS_FATAL("Nan in orientation!!");
     }
     poseAndRot(3) = pose.orientation(0);
     poseAndRot(4) = pose.orientation(1);
-    poseAndRot.print();
+    // poseAndRot.print();
 
     // Solve FK
     Vector3d FKoutput = ForwardKin(q);
@@ -387,8 +382,6 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, JointValues q)
     while (error.norm() > 10e-10 && iter < iter_num)
     {
         j = Jacobian(q);
-        // j.print();
-        // return q;
         temp = j.transpose()*j + k*k*matrix::eye<double,5>();
         temp= temp.I();
         dq = temp*j.transpose() * error;
@@ -400,15 +393,15 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, JointValues q)
         matrixFK(2) = FKoutput(2);
         matrixFK(3) = q(1) + q(2) + q(3);
         matrixFK(4) = q(4);
-        // FKoutput.print();
         error = poseAndRot - matrixFK;
         iter++;
     }
+    prevNumIKAngle = q;
     // std::cout<<"total iterations:" << iter<<std::endl;
     if (iter > iter_num - 1)
     {
+        //solution not found
         q.setAll(-1000);
-        // ROS_FATAL("[ArmKinematics]Solution can't be found");
         return q;
     }
     if (!checkAngles(q))

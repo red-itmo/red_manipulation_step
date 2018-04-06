@@ -10,8 +10,6 @@ TrajectoryGenerator::~TrajectoryGenerator()
 std::vector<JointValues> TrajectoryGenerator::calculateTrajectory(const Pose & startPose, const Pose & endPose)
 {
 	Trajectory traj;
-	if(!traj.check_feasible(startPose,endPose))
-		return traj.qTra;
     traj.calculateWorkSpaceTrajectory(maxVelocity, maxAcceleration, startPose, endPose, timeStep);
     traj.convertWorkSpaceToJointSpace(startPose, endPose, timeStep);
     traj.generateTrajectoryMsg(trajectory);

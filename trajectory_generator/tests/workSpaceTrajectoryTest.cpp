@@ -54,29 +54,12 @@ int main(int argc, char *argv[])
     startPose.position(2) = initPosition[2];
     startPose.orientation(0) = orientation[0];
     startPose.orientation(1) = 0;
-    startPose.orientation(2) = 0;
-
-    JointValues maxRot;
-    maxRot(1) = M_PI / 3;
-	maxRot(2) = M_PI / 6;
-	maxRot(3) = M_PI / 6;
-
-    if (solver.numericalIK(startPose, maxRot)(0)==-1000) {
-        ROS_ERROR_STREAM("Solution start pose not found!");
-        return 1;
-    }
 
     endPose.position(0) = endPosition[0];
     endPose.position(1) = endPosition[1];
     endPose.position(2) = endPosition[2];
     endPose.orientation(0) = orientation[1];
     endPose.orientation(1) = 0;
-    endPose.orientation(2) = 0;
-
-    if (solver.numericalIK(endPose, maxRot)(0)==-1000) {
-        ROS_ERROR_STREAM("Solution end pose not found!");
-        return 1;
-    }
 
     Trajectory traj;
     traj.calculateWorkSpaceTrajectory(maxVel, maxAcc, startPose, endPose, timeStep);
@@ -94,10 +77,8 @@ int main(int argc, char *argv[])
     ROS_INFO_STREAM("Size: " << traj.posTra.size());
     for (uint i = 0; i < traj.posTra.size(); ++i) {
         curPos = traj.posTra[i];
-        curRot = traj.rotTra[i];
 
-        logFile << curPos(0) << "\t" << curPos(1) << "\t" << curPos(2) 
-        << "\t" << curRot(0) << "\t" << curRot(1) << "\t" << curRot(2)
+        logFile << curPos(0) << "\t" << curPos(1) << "\t" << curPos(2)
         << "\t" << traj.time[i] << "\n";
     }
 

@@ -1,12 +1,9 @@
 <launch>
-
-	<node 
+	<node
 		pkg = "arm_manipulation"
 		type = "trajectory_test"
 		name = "trajectory_test"
-		output = "screen"
-	>
+		output = "screen">
 		<rosparam command="load" file="$(find arm_manipulation)/config/trajectory_test_configuration.yaml" />
 	</node>
-
 </launch>

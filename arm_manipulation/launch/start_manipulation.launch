@@ -1,3 +1,4 @@
+<!-- doesnt work -->
 <launch>
 	<node 
 		pkg = "arm_manipulation"

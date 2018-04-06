@@ -1,6 +1,6 @@
 #Installation
 
-1. run git clone 
+1. run git clone
 ```
 https://github.com/red-itmo/red_manipulation_step.git
 ```
@@ -9,19 +9,19 @@ https://github.com/red-itmo/red_manipulation_step.git
 
 3. run ```catkin_make```
 
-<!-- # How to run?
+# How to run?
 
-1. Start manipulation node.
+1. Start test
 ```
-roslaunch arm_manipulation start_manipulation.launch
+roslaunch arm_manipulation trajectory_test.launch
 ```
 
-2. Start cv - manipulation control node
+<!-- 2. Start cv - manipulation control node
 ```
 rosrun manipulation_control_node start_node
 ```
 
 3. Send message for starting
 ```
-rosservice call /table_feasible -->
-```
+rosservice call /table_feasible
+``` -->
