@@ -34,7 +34,7 @@ function ang = calcMaxRot(pos)
     end
 
     if q2 > jointLimits(4, 2) then
-        disp("q2: Out of range!");
+        disp("[calcMaxRot] q2: Out of range!");
     end
     ang = [q2; q3; q4];
 endfunction
@@ -47,13 +47,13 @@ else
     ax = h.children;
 end
 
-initConfiguration = [0.36; 0; 0.3; %pi; 0];
-endConfiguration = [0.36; 0; 0.1; %pi; 0];
+initConfiguration = [0.26; 0; -0.1; %pi; 0];
+endConfiguration = [0.26; 0; 0.1; %pi; 0];
 maxVel = 0.1; maxAccel = 0.5;
 timeStep = 0.02;
 
-[time, velTra, posTra, rotTra] = workSpaceTraj(initConfiguration, endConfiguration, maxAccel, maxVel, timeStep);
-poses = [posTra; rotTra];
+[time, velTra, posTra] = workSpaceTraj(initConfiguration, endConfiguration, maxAccel, maxVel, timeStep);
+poses = posTra;
 T = length(time);
 
 // Calculate rotation trajectory
@@ -82,13 +82,14 @@ err = 0; e_iter = 0;// error
 offset = 0;
 offsets = [];
 
+initialAngle = zeros(DOF, 1);
+initialAngle(2) = %pi/3;
+initialAngle(3) = %pi/6;
+initialAngle(4) = %pi/6;
+
 for i = 1:T;
 	curConf = poses(:, i);
     ang = calcMaxRot(curConf);
-    maxRot = zeros(DOF, 1);
-    maxRot(2) = %pi/3;
-    maxRot(3) = %pi/6;
-    maxRot(4) = %pi/6;
     theta = ang(1) + ang(2) + ang(3); //rotTraj(i);
 
     offset = 0;
@@ -98,15 +99,17 @@ for i = 1:T;
         offset = 0;
     end;
     poses(4, i) = theta - 0.1 - offset;
-    [q_curr, err, info] = numIK(poses(:, i), maxRot);
+    poses(5, i) = 0;
+    [q_curr, err, info] = numIK(poses(:, i), initialAngle);
     q_traj = [q_traj, q_curr];
-    q_traj2 = [q_traj2, (IK(poses(1:3, i), getR(0, poses(4, i), 0), [0, 1]))];
+//    q_traj2 = [q_traj2, (IK(poses(1:3, i), getR(0, poses(4, i), 0), [0, 1]))];
     if (err <> 0) then
         disp("Caught ERROR!");
         disp("Information: ");
         disp(poses(:, i));
         return;
     end
+    initialAngle = q_curr;
 end
 animation(q_traj, size(q_traj, 2), 1, ax);
 
@@ -130,13 +133,13 @@ for i = 1:3
     e.children.foreground = color("blue");
     e.children.line_style = 1;
 
-    plot(time(1:n), q_traj2(i + 1, :));
-    e = gce();
-    e.children.thickness = 2;
-    e.children.foreground = color("orange");
-    e.children.line_style = 4;
+//    plot(time(1:n), q_traj2(i + 1, :));
+//    e = gce();
+//    e.children.thickness = 2;
+//    e.children.foreground = color("orange");
+//    e.children.line_style = 4;
 
-    legend("Numerical", "Analitic");
+//    legend("Numerical", "Analitic");
 
     a.font_size = 1;
     a.filled = "on";

@@ -103,7 +103,7 @@ function [q, err, other] = numIK(v, q_i)
     e = v - [FK(q); q(2) + q(3) + q(4); q(5)];
     while (norm(e) > 10e-10 & iter < iter_num) // (norm(e) > 10e-4) & 
         j = J(q);
-disp(j);
+
         dq = inv(j'*j + k^2*eye(DOF, DOF))*j'*e;
         q = q + dq;
         e = (v - [FK(q); q(2) + q(3) + q(4); q(5)]);
@@ -122,8 +122,9 @@ disp(j);
         err = 2;
         return;
     end
+    disp(iter);
 
-    q = round(q*10000)/10000;
+//    q = round(q*10000)/10000;
     err = 0;
 endfunction
 function q = normalizeAngles(q_raw)
