@@ -15,31 +15,25 @@ catkin_package(
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
 )
+add_executable(work_traj_test tests/workSpaceTrajectoryTest.cpp)
+add_executable(joint_traj_test tests/jointSpaceTrajectoryTest.cpp)
 
-include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
-)
+add_library(trajectory_lib src/Trajectory.cpp)
+
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(trajectory_generator
-    src/Trajectory.cpp
     src/TrajectoryGenerator.cpp
 )
 target_link_libraries(trajectory_generator
+    trajectory_lib
     ${catkin_LIBRARIES}
-)
-
-add_executable(work_traj_test
-    tests/workSpaceTrajectoryTest.cpp
-    src/Trajectory.cpp
 )
 target_link_libraries(work_traj_test
+    trajectory_lib
     ${catkin_LIBRARIES}
 )
-add_executable(joint_traj_test
-    tests/jointSpaceTrajectoryTest.cpp
-    src/Trajectory.cpp
-)
 target_link_libraries(joint_traj_test
+    trajectory_lib
     ${catkin_LIBRARIES}
 )
