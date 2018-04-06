@@ -57,6 +57,7 @@ bool YoubotManipulator::moveArm(const JointValues & angles)
     }
     return false;
 }
+
 bool YoubotManipulator::moveArm(const Pose & pose)
 {
     brics_actuator::JointPositions jointPositions;
