@@ -47,10 +47,10 @@ else
     ax = h.children;
 end
 
-initConfiguration = [0.26; 0; -0.1; %pi; 0];
-endConfiguration = [0.26; 0; 0.1; %pi; 0];
-maxVel = 0.1; maxAccel = 0.5;
-timeStep = 0.02;
+initConfiguration = [0.26; 0; 0.1; %pi; 0];
+endConfiguration = [0.26; 0; 0.2; %pi; 0];
+maxVel = 0.05; maxAccel = 0.1;
+timeStep = 0.05;
 
 [time, velTra, posTra] = workSpaceTraj(initConfiguration, endConfiguration, maxAccel, maxVel, timeStep);
 poses = posTra;

@@ -32,7 +32,7 @@ class YoubotManipulator
         void moveArmLoop();
 
         void initArmTopics();
-        void initActionClient(const double aMax, const double vMax, const double timeStep);
+        void setConstraints(const double aMax, const double vMax, const double timeStep);
 
     private:
         ros::NodeHandle nh;
@@ -48,7 +48,6 @@ class YoubotManipulator
 
         // Kinematic constansts for trajectory control, lr - youbot_driver rate
         double maxVel, maxAccel, lr, timeStep;
-        bool sim;//simulation control
 
         // Trajectory action client
         ActionClent * trajectoryAC;

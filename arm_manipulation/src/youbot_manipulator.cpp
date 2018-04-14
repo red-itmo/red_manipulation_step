@@ -6,6 +6,10 @@ YoubotManipulator::YoubotManipulator(ros::NodeHandle & nodeHandle)
     :nh(nodeHandle)
 {
     nh.param("youBotDriverCycleFrequencyInHz", lr, 100.0);
+    this->maxAccel = 0.1;
+    this->maxVel = 0.05;
+    this->timeStep = 0.05;
+    initArmTopics();
 }
 
 YoubotManipulator::~YoubotManipulator() {}
@@ -15,21 +19,23 @@ void YoubotManipulator::initArmTopics()
     ROS_INFO_STREAM("[Arm Manipulation] Load YouBot Arm Manipulation..." << "\n");
     ROS_INFO_STREAM("[Arm Manipulation] Publisher: arm_1/arm_controller/position_command...");
     armPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/arm_controller/position_command", 1);
+
     ROS_INFO_STREAM("[Arm Manipulation] Publisher: arm_1/gripper_controller/position_command...");
     gripperPublisher = nh.advertise<brics_actuator::JointPositions> ("arm_1/gripper_controller/position_command", 1);
+
     ROS_INFO_STREAM("[Arm Manipulation] Subsciber: arm_1/joint_states...");
     stateSubscriber = nh.subscribe("/arm_1/joint_states", 10, &YoubotManipulator::stateCallback, this);
+
+    ROS_INFO_STREAM("[Arm Manipulation] Load ActionClient arm_1/arm_controller/velocity_joint_trajecotry");
+
+    trajectoryAC = new ActionClent ("arm_1/arm_controller/velocity_joint_trajecotry", true);
 }
 
-void YoubotManipulator::initActionClient(const double maxAccel=0.1, const double maxVel=0.05, const double timeStep=0.05)
+void YoubotManipulator::setConstraints(const double maxAccel, const double maxVel, const double timeStep)
 {
     this->maxAccel = maxAccel;
     this->maxVel = maxVel;
     this->timeStep = timeStep;
-
-    ROS_INFO_STREAM("[Arm Manipulation] Load ActionClient arm_1/arm_controller/velocity_joint_trajecotry");
-    trajectoryAC = new ActionClent("arm_1/arm_controller/velocity_joint_trajecotry", true);
-
     ROS_INFO_STREAM("[Arm Manipulation] TRJ parameters:"
         << " Driver Rate: " << lr
         << " Max Vel.: " << maxVel
@@ -178,9 +184,6 @@ void YoubotManipulator::moveArmLoop()
 
     ROS_INFO_STREAM("[Arm Manipulation] Service [server]: /manipulator_pose...");
     poseServer = nh.advertiseService("manipulator_pose", &YoubotManipulator::goToPose, this);
-
-    initArmTopics();
-    initActionClient();
 
     while(nh.ok()) {
         ros::spin();

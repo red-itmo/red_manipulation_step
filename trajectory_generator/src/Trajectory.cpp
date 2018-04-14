@@ -55,7 +55,7 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
 
     if (t2 < t1)
     {
-        ROS_FATAL_STREAM("[Trajectory]t2<t1");
+        ROS_FATAL_STREAM("[Trajectory]t2<t1. Try to decrease max speed");
         return;
     }
     Vector3d currCoord = startPose.position;
@@ -115,7 +115,7 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
         curConf.orientation(0) = theta - 0.1 - offset;
         curRot = solver.numericalIK(curConf, angle);
         //if error has occured
-        if(curRot(0)==-1000){
+        if(curRot(0)==-1000 || curRot(0)==-2000){
             ROS_WARN_STREAM("Trajectory soluion not found!");
             return;
         }

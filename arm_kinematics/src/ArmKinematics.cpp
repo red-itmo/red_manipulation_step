@@ -253,7 +253,7 @@ void makeKinematicModelOffsets(JointValues & jointAngles)
 bool checkAngles(const JointValues & jointAngles)
 {
     for (size_t i = 0; i < DOF; ++i) {
-        if (jointMinAngles[i] > jointAngles(i) && jointMaxAngles[i] < jointAngles(i))
+        if (jointMinAngles[i] > jointAngles(i) || jointMaxAngles[i] < jointAngles(i))
         {
             ROS_WARN("[ArmKinematics] Joint %zu is out of range", i);
             return false;
@@ -405,7 +405,11 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, JointValues q)
         return q;
     }
     if (!checkAngles(q))
-        return 0;
+    {
+        //solution not found
+        q.setAll(-2000);
+        return q;
+    }
     for (int i = 0; i < 5; ++i)
         q(i) = round(q(i) * 10000) / 10000;
     return q;

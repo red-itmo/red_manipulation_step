@@ -54,8 +54,7 @@ int main(int argc, char  ** argv)
 
     YoubotManipulator youbotManipulator(nh);
 
-    youbotManipulator.initArmTopics();
-    youbotManipulator.initActionClient(maxVel, maxAcc, timeStep);
+    youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
 
     Pose startPose, endPose;
 

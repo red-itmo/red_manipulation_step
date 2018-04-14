@@ -33,7 +33,7 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     double startVel = 0;
     double endVel = 0;
 
-    ROS_INFO_STREAM("[Arm Manipulation] Max Vel: " << maxVel << " Max Accel: " << maxAccel <<" TimeStep: " << timeStep);
+    ROS_INFO_STREAM("[Arm Manipulation,moveToLineTrajectory] Max Vel: " << maxVel << " Max Accel: " << maxAccel <<" TimeStep: " << timeStep);
     TrajectoryGenerator gen(maxVel, maxAccel, timeStep);
     ROS_INFO("Calculating trajectory...");
     std::vector<JointValues> rotationsTrajectory=gen.calculateTrajectory(startPose, endPose);
@@ -45,14 +45,19 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     jointPositions = createArmPositionMsg(startAngles);
 
     ROS_INFO("Going to initial position...");
+    // jointPositions.print();
     armPublisher.publish(jointPositions);
 
     ros::Duration(2).sleep();
 
+    // std::string acception = "y";
+    // std::cout << "Proceed? (y, n)"; std::cin >> acception;
+    // if (acception != "y") return;
+
     if (!gen.trajectory.points.empty())
     {
         ROS_INFO("Waiting for server...");
-        trajectoryAC->waitForServer(); // Will wait for infinite time
+        trajectoryAC->waitForServer();
         ROS_INFO("[Arm Manipulation] Action server started, sending goal.");
 
         control_msgs::FollowJointTrajectoryGoal goal;

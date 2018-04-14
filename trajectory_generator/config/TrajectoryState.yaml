@@ -1,7 +1,7 @@
-start_position: [0.26, 0, -0.1]
-end_position: [0.26, 0.0, 0.1]
+start_position: [0.26, 0, 0.1]
+end_position: [0.26, 0.0, 0.2]
 angles: [3.14,3.14]
-v_m: 0.1
-a_m: 0.5
+v_m: 0.05
+a_m: 0.1
 time_step: 0.05
 path: /home/egor/vrepWS/src/red_manipulation_step/trajectory_generator/
