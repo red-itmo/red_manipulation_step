@@ -53,7 +53,6 @@ int main(int argc, char  ** argv)
     if (acception != "y") return 1;
 
     YoubotManipulator youbotManipulator(nh);
-
     youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
 
     Pose startPose, endPose;
@@ -61,15 +60,23 @@ int main(int argc, char  ** argv)
     startPose.position(0) = startPosition[0];
     startPose.position(1) = startPosition[1];
     startPose.position(2) = startPosition[2];
-    startPose.orientation(0) = startPosition[3];
+    startPose.orientation(2) = startPosition[3];
     startPose.orientation(1) = startPosition[4];
+
+    JointValues angles;
+    ArmKinematics solver;
+    if (!solver.solveFullyIK(startPose, angles)) {
+        ROS_ERROR_STREAM("Solution start pose not found!");
+        return 1;
+    }
 
     endPose.position(0) = endPosition[0];
     endPose.position(1) = endPosition[1];
     endPose.position(2) = endPosition[2];
-    endPose.orientation(0) = endPosition[3];
+    endPose.orientation(2) = endPosition[3];
     endPose.orientation(1) = endPosition[4];
 
+    youbotManipulator.moveArm(angles);
     youbotManipulator.moveToLineTrajectory(startPose, endPose);
 
     ROS_INFO("Ready to receive another service command!");

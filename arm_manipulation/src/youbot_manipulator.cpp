@@ -46,16 +46,16 @@ bool YoubotManipulator::moveArm(const JointValues & angles)
 {
     ROS_INFO("[Arm Manipulation] moveArm");
     brics_actuator::JointPositions jointPositions;
-    if (checkAngles(angles)) {
-        jointPositions = createArmPositionMsg(angles);
-        armPublisher.publish(jointPositions);
-        // ros::Duration(0.5).sleep();
+    jointPositions = createArmPositionMsg(angles);
+    //wait a little bit until subscibers connect
+    ros::Duration(0.5).sleep();
+    if(armPublisher.getNumSubscribers()==0)
+        ROS_WARN("[arm_manipulation] No subscibers are connected to armPublisher...");
+    armPublisher.publish(jointPositions);
 
-            if (!checkAchievementOfPosition(angles)) {
-                ROS_WARN("Position is not desired!");
-                return false;
-            }
-        return true;
+    if (!checkAchievementOfPosition(angles)) {
+        ROS_WARN("Position is not desired!");
+        return false;
     }
     return false;
 }
