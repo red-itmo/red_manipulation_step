@@ -38,6 +38,12 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     ROS_INFO("Calculating trajectory...");
     std::vector<JointValues> rotationsTrajectory=gen.calculateTrajectory(startPose, endPose);
 
+    //if error occured during trajectory generation
+    if(rotationsTrajectory.size()==0)
+    {
+        return;
+    }
+
     ROS_INFO_STREAM("[Arm Manipulation] Move to initial position.");
     for (size_t i = 0; i < 5; ++i) {
         startAngles(i) = gen.trajectory.points[0].positions[i];
@@ -45,7 +51,9 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     jointPositions = createArmPositionMsg(startAngles);
 
     ROS_INFO("Going to initial position...");
-    // jointPositions.print();
+    ros::Duration(0.5).sleep();
+    if(armPublisher.getNumSubscribers()==0)
+        ROS_WARN("[arm_manipulation] No subscibers are connected to armPublisher...");
     armPublisher.publish(jointPositions);
 
     ros::Duration(2).sleep();

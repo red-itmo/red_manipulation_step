@@ -194,11 +194,15 @@ bool YoubotManipulator::goToInitAndRelax()
 {
     JointValues initAngles;
     setConstraints(0.05,0.05,0.2);
+    initAngles.setAll(0.1);
+    initAngles(2)=-0.1;
+    initAngles(4)=0.2;
     moveArm(initAngles);
     //kill motors
     std_srvs::Empty empty;
     ros::service::call("arm_1/switchOffMotors", empty);
     ros::service::call("base/switchOffMotors", empty);
+    ROS_INFO("Motors turned off!");
 
     ros::spinOnce();
 }
