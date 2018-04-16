@@ -189,3 +189,16 @@ void YoubotManipulator::moveArmLoop()
         ros::spin();
     }
 }
+
+bool YoubotManipulator::goToInitAndRelax()
+{
+    JointValues initAngles;
+    setConstraints(0.05,0.05,0.2);
+    moveArm(initAngles);
+    //kill motors
+    std_srvs::Empty empty;
+    ros::service::call("arm_1/switchOffMotors", empty);
+    ros::service::call("base/switchOffMotors", empty);
+
+    ros::spinOnce();
+}

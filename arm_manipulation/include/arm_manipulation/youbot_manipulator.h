@@ -9,6 +9,7 @@
 #include <brics_actuator/JointPositions.h>
 #include <sensor_msgs/JointState.h>
 #include <red_msgs/ArmPoses.h>
+#include "std_srvs/Empty.h"//for /SwitchMotorOff service
 
 #include <actionlib/client/simple_action_client.h>
 
@@ -33,6 +34,7 @@ class YoubotManipulator
 
         void initArmTopics();
         void setConstraints(const double aMax, const double vMax, const double timeStep);
+        bool goToInitAndRelax();
 
     private:
         ros::NodeHandle nh;
