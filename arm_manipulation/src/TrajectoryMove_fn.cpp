@@ -56,7 +56,9 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
         ROS_WARN("[arm_manipulation] No subscibers are connected to armPublisher...");
     armPublisher.publish(jointPositions);
 
-    ros::Duration(2).sleep();
+    //Waiting this amount of time will stop autooscillation of manipulator:))
+    //TODO receive speed and compare it with 0 to prevent bad behaviour
+    ros::Duration(4).sleep();
 
     // std::string acception = "y";
     // std::cout << "Proceed? (y, n)"; std::cin >> acception;

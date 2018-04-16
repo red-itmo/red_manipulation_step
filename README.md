@@ -1,4 +1,4 @@
-#Installation
+# Installation
 
 1. run git clone
 ```
@@ -11,9 +11,13 @@ https://github.com/red-itmo/red_manipulation_step.git
 
 # How to run?
 
-1. Start test
+To start trajectory test run
 ```
 roslaunch arm_manipulation trajectory_test.launch
+```
+To go to initial position and turn off motors run
+```
+rosrun arm_manipulation goToInitAndRelax
 ```
 
 <!-- 2. Start cv - manipulation control node

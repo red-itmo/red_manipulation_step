@@ -29,7 +29,7 @@ include_directories(
 add_executable(manipulation_test tests/ManipulationTest.cpp)
 add_executable(move_gripper tests/MoveGripper.cpp)
 add_executable(trajectory_test tests/TrajectoryTest.cpp)
-add_executable(goToInitAndRelax tests/goToInitAndRelax.cpp)
+add_executable(goToInitAndRelax src/goToInitAndRelax.cpp)
 
 add_library(youbot_manipulator
     src/youbot_manipulator.cpp

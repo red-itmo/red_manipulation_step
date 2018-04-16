@@ -35,6 +35,7 @@ class YoubotManipulator
         void initArmTopics();
         void setConstraints(const double aMax, const double vMax, const double timeStep);
         bool goToInitAndRelax();
+        bool serviceTurnOnMotors(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
     private:
         ros::NodeHandle nh;
@@ -59,6 +60,8 @@ class YoubotManipulator
 
         // Service for manipulator to move to angles
         ros::ServiceServer poseServer;
+
+        ros::ServiceServer srvRelaxMotorsServer;
 
         JointValues stateValues;
 
