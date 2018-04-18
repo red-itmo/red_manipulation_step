@@ -34,14 +34,14 @@ public:
     // Calc velocities and accelerations
     void calcKinematicsParams(const Vector3d & linearVelocities, const JointValues & jointAngles, JointValues & jointAngVel, JointValues & jointAngAcc);
 
+    void calcOrientationMatrix(double phi1, double phi5, double alpha, matrix::Matrix<double, 3, 3> & orientation);
+
     matrix::SquareMatrix<double, 5> Jacobian(const JointValues &angles);
     Vector3d calcMaxRot(const Vector3d & position);
     //wrapper for transformFromFrame5ToFrame0
     Vector3d ForwardKin(const JointValues &angles);
     JointValues numericalIK(const Pose &pose, JointValues q);
     JointValues prevNumIKAngle;
-private:
-    void calcOrientationMatrix(double phi1, double phi5, double alpha, matrix::Matrix<double, 3, 3> & orientation);
 };
 
 #endif
