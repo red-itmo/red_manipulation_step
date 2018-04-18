@@ -61,4 +61,13 @@ target_link_libraries(moving_belt
     youbot_manipulator
     ${trajectory_generator_LIBRARIES}
     ${catkin_LIBRARIES}
+    )
+target_link_libraries(moving_belt
+    youbot_manipulator
+    ${trajectory_generator_LIBRARIES}
+    ${catkin_LIBRARIES}
+    )
+target_link_libraries(start_manipulation
+    youbot_manipulator
+    ${catkin_LIBRARIES}
 )
