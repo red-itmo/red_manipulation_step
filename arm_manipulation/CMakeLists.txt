@@ -30,6 +30,7 @@ add_executable(manipulation_test tests/ManipulationTest.cpp)
 add_executable(move_gripper tests/MoveGripper.cpp)
 add_executable(trajectory_test tests/TrajectoryTest.cpp)
 add_executable(goToInitAndRelax src/goToInitAndRelax.cpp)
+add_executable(start_manipulation src/StartManipulation.cpp)
 
 add_library(youbot_manipulator
     src/youbot_manipulator.cpp
@@ -48,6 +49,10 @@ target_link_libraries(trajectory_test
     ${catkin_LIBRARIES}
 )
 target_link_libraries(goToInitAndRelax
+    youbot_manipulator
+    ${catkin_LIBRARIES}
+)
+target_link_libraries(start_manipulation
     youbot_manipulator
     ${catkin_LIBRARIES}
 )

@@ -4,9 +4,9 @@
 		type = "move_by_camera"
 		name = "move_by_camera"
 		output = "screen">
-		
+
 	</node>
-	<node 
+	<node
 		pkg = "arm_manipulation"
 		type = "grasping_test"
 		name = "grasping_test"

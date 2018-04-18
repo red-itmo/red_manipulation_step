@@ -1,0 +1,9 @@
+<launch>
+    <node
+        pkg = "arm_manipulation"
+        type = "start_manipulation"
+        name = "manipulation_node"
+        output = "screen">
+
+    </node>
+</launch>
