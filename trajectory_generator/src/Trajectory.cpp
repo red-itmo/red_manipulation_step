@@ -30,6 +30,11 @@ double Trajectory::getVel(double time)
     return 0;
 }
 
+double Trajectory::getTrajectoryTime()
+{
+    return t1+t2+t3;
+}
+
 void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep)
 {
     this->maxAccel = maxAccel;
