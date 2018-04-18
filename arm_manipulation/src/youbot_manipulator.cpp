@@ -170,8 +170,8 @@ bool YoubotManipulator::goToPose(red_msgs::ArmPoses::Request & req, red_msgs::Ar
     pose.position(0) = req.poses[0].x;
     pose.position(1) = req.poses[0].y;
     pose.position(2) = req.poses[0].z;
-    pose.orientation(1) = req.poses[0].theta;
-    pose.orientation(2) = req.poses[0].psi;
+    pose.orientation(1) = req.poses[0].psi;
+    pose.orientation(2) = req.poses[0].theta;
 
     res.error = moveArm(pose);
     return true;
