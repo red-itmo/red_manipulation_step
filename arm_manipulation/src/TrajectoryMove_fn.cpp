@@ -48,17 +48,17 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     for (size_t i = 0; i < 5; ++i) {
         startAngles(i) = gen.trajectory.points[0].positions[i];
     }
-    jointPositions = createArmPositionMsg(startAngles);
 
     ROS_INFO("Going to initial position...");
-    ros::Duration(0.5).sleep();
-    if(armPublisher.getNumSubscribers()==0)
-        ROS_WARN("[arm_manipulation] No subscibers are connected to armPublisher...");
-    armPublisher.publish(jointPositions);
+    // ros::Duration(0.5).sleep();
+    // if(armPublisher.getNumSubscribers()==0)
+        // ROS_WARN("[arm_manipulation] No subscibers are connected to armPublisher...");
 
     //Waiting this amount of time will stop autooscillation of manipulator:))
     //TODO receive speed and compare it with 0 to prevent bad behaviour
-    ros::Duration(4).sleep();
+
+    moveArm(startAngles);
+    ros::Duration(2).sleep();
 
     // std::string acception = "y";
     // std::cout << "Proceed? (y, n)"; std::cin >> acception;
