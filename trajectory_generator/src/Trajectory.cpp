@@ -32,7 +32,7 @@ double Trajectory::getVel(double time)
 
 double Trajectory::getTrajectoryTime()
 {
-    return t1+t2+t3;
+    return t3;
 }
 
 void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep)
@@ -66,7 +66,7 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
     Vector3d currCoord = startPose.position;
     Vector3d currVel;
 
-    for (double currentTime = 0; currentTime < t3; currentTime += timeStep)
+    for (double currentTime = 0; currentTime < t3+2*timeStep; currentTime += timeStep)
     {
         currVel = movementDirection * getVel(currentTime);
         velTra.push_back(currVel);

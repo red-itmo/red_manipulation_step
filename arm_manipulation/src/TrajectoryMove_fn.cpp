@@ -50,12 +50,13 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     }
 
     ROS_INFO("Going to initial position...");
-    // ros::Duration(0.5).sleep();
-    // if(armPublisher.getNumSubscribers()==0)
-        // ROS_WARN("[arm_manipulation] No subscibers are connected to armPublisher...");
 
-    //Waiting this amount of time will stop autooscillation of manipulator:))
-    //TODO receive speed and compare it with 0 to prevent bad behaviour
+    // std::cout<<"Generated trj angles:\n";
+    // for (size_t j = 0; j < gen.trajectory.points.size(); ++j) {
+    //     for (size_t i = 0; i < 5; ++i)
+    //          std::cout<<gen.trajectory.points[j].positions[i]<<" ";
+    //     std::cout<<"\n";
+    //     }
 
     moveArm(startAngles);
     ros::Duration(2).sleep();

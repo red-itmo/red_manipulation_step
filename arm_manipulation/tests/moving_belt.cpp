@@ -25,13 +25,14 @@ int main(int argc, char  ** argv)
     ros::NodeHandle nh;
     ROS_INFO("Starting moving_belt...");
 
-    double a[4]={0.26,0,0.1,1.0};
+    //[y,x,z]
+    double a[4]={-0.2,0.29,-0.05,1.0};
     matrix::Vector<double,4> curr_coord(a);//object's start point
     double dphi=0,
     speed=0.01,//object's speed
     t_end=3;//prediction time,s
     matrix::Vector<double,4> next_coord;
-    double phi_sum;
+    double phi_sum=0;
     for(double i=0;i<t_end;i++)
     {
         std::cout<<i<<std::endl;
@@ -41,21 +42,21 @@ int main(int argc, char  ** argv)
         curr_coord.print();
     }
     phi_sum=remainder(phi_sum,2*M_PI);
-    double maxVel=0.05, maxAcc=0.1, timeStep=0.2;
+    double maxVel=0.1, maxAcc=0.1, timeStep=0.05;
     YoubotManipulator youbotManipulator(nh);
     youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
 
     Pose startPose, endPose;
     //manipulator's start point
-    startPose.position(0) = 0.26;
+    startPose.position(0) = 0.32;
     startPose.position(1) = 0;
-    startPose.position(2) = 0.2;
+    startPose.position(2) = 0.05;
     startPose.orientation(0) = M_PI;
     startPose.orientation(1) = 0;
 
     //goal point to grasp object
-    endPose.position(0) = curr_coord(0);
-    endPose.position(1) = curr_coord(1);
+    endPose.position(0) = curr_coord(1);
+    endPose.position(1) = curr_coord(0);
     endPose.position(2) = curr_coord(2);
     endPose.orientation(0) = M_PI;
     endPose.orientation(1) = phi_sum;
@@ -71,22 +72,26 @@ int main(int argc, char  ** argv)
     traj.calculateWorkSpaceTrajectory(maxVel, maxAcc, startPose, endPose, timeStep);
     std::cout<<"actual time to complete trajectory:"<< traj.getTrajectoryTime()<<std::endl;
 
-    double deltaTime=t_end-traj.getTrajectoryTime();
+    double timeToGrasp=0.1;
+    double deltaTime=t_end-traj.getTrajectoryTime()-timeToGrasp;
 
     if(deltaTime<0.1){
         ROS_WARN("Not feasible to grasp!");
+        deltaTime=0;
     }
 
     // Acception step
     std::string acception = "y";
     std::cout << "Start trajectory test? (y, n)"; std::cin >> acception;
     if (acception != "y") return 1;
-
-    youbotManipulator.moveToLineTrajectory(startPose, endPose);
-    ros::Duration(deltaTime-0.1).sleep();
-    //take object
     youbotManipulator.moveGripper(0.0115);
+    // stateValues.print();
+    // ros::spin();
+    youbotManipulator.moveToLineTrajectory(startPose, endPose);
+    // ros::Duration(deltaTime).sleep();
+    //take object
+    // youbotManipulator.moveGripper(0.0);
     //return to initial position
-    youbotManipulator.moveToLineTrajectory(endPose, startPose);
+    // youbotManipulator.moveToLineTrajectory(endPose, startPose);
 
 }
