@@ -47,8 +47,8 @@ else
     ax = h.children;
 end
 
-initConfiguration = [0.26; 0; 0.1; %pi; 0];
-endConfiguration = [0.26; 0; 0.2; %pi; 0];
+initConfiguration = [0.35; 0.1; -0.05; %pi; 0];
+endConfiguration = [0.35; -0.2; -0.05; %pi; 0];
 maxVel = 0.05; maxAccel = 0.1;
 timeStep = 0.05;
 

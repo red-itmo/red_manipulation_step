@@ -15,7 +15,8 @@ endfunction
 
 //makeWorkSpacePlot();
 //return;
-filePath="~/uws/src/red_manipulation_step/arm_manipulation/logs/data.log"
+directory = get_absolute_file_path("plot.sce");
+filePath=directory+"../../arm_manipulation/logs/data.log"
 results=read(filePath, -1, 26);
 RAD2DEG = 180/%pi;
 RAD2DEG = 1;

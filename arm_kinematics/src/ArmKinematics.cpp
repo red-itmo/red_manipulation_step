@@ -265,7 +265,6 @@ bool checkAngles(const JointValues & jointAngles)
 Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
 {
     Vector3d jointValues;
-    jointValues.setZero();
     double d23 = d2 + d3;
     Pose goal;
     goal.position(0) =  position(0) - d0x - d1x;
@@ -274,9 +273,9 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
     if (d23 + d4 < goal.position.norm())
     {
         ROS_WARN("[ArmKinematics]Solution doesn't exist!");
-        return 0;
+        jointValues.setAll(-1000);
+        return jointValues;
     }
-    // goal.position.print();
     double cosq4 = (pow(goal.position.norm(), 2) - d23 * d23 - d4 * d4) / (2 * d23 * d4);
     jointValues(2) = atan2(sqrt(1 - cosq4 * cosq4), cosq4);
 
@@ -298,7 +297,6 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
 
     if (jointValues(0) > jointMaxAngles[1])
         ROS_WARN("[ArmKinematics]q2 is out of range!");
-    // jointValues.print();
     return jointValues;
 }
 

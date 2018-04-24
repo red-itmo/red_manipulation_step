@@ -12,10 +12,14 @@ std::vector<JointValues> TrajectoryGenerator::calculateTrajectory(const Pose & s
 	Trajectory traj;
     traj.calculateWorkSpaceTrajectory(maxVelocity, maxAcceleration, startPose, endPose, timeStep);
     traj.convertWorkSpaceToJointSpace(startPose, endPose, timeStep);
-    if(traj.qTra.size()==0)
+    //if trajectory in configuration space isn't the same that of work space
+    //due to error while converting between workspaces
+    if(traj.qTra.size()==0 || traj.qTra.size()!=traj.posTra.size())
     {
         ROS_FATAL_STREAM("Error in trajectory!");
-        return traj.qTra;
+        std::vector<JointValues> temp;
+        //return empty array
+        return temp;
     }
     traj.generateTrajectoryMsg(trajectory);
     return traj.qTra;

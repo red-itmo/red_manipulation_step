@@ -110,6 +110,9 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
     {
         curConf = poses[i];
         ang = solver.calcMaxRot(curConf.position);
+        //if error occured
+        if(ang(0)==-1000)
+            return;
 
         theta = ang(0) + ang(1) + ang(2);
         offset = 0;
