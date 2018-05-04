@@ -84,6 +84,10 @@ bool YoubotManipulator::moveArm(const Pose & pose)
 void YoubotManipulator::moveGripper(double jointValue)
 {
     brics_actuator::JointPositions jointPositions = createGripperPositionMsg(jointValue);
+    //wait a little bit until subscibers connect
+    ros::Duration(0.5).sleep();
+    if(gripperPublisher.getNumSubscribers()==0)
+        ROS_WARN("[arm_manipulation] No subscibers are connected to gripperPublisher...");
     gripperPublisher.publish(jointPositions);
 }
 

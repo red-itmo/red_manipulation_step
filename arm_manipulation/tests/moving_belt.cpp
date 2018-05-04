@@ -26,13 +26,13 @@ int main(int argc, char  ** argv)
     ROS_INFO("Starting moving_belt...");
 
     //[y,x,z]
-    double a[4]={-0.2,0.29,-0.05,1.0};
+    double a[4]={0.1,0.35,0.04,1.0};
     matrix::Vector<double,4> curr_coord(a);//object's start point
     double dphi=0,
-    speed=0.01,//object's speed
+    speed=-0.04,//object's speed
     t_end=3;//prediction time,s
     matrix::Vector<double,4> next_coord;
-    double phi_sum=0;
+    double phi_sum=-M_PI/2;
     for(double i=0;i<t_end;i++)
     {
         std::cout<<i<<std::endl;
@@ -41,16 +41,16 @@ int main(int argc, char  ** argv)
         phi_sum+=dphi;
         curr_coord.print();
     }
-    phi_sum=remainder(phi_sum,2*M_PI);
-    double maxVel=0.1, maxAcc=0.1, timeStep=0.05;
+    phi_sum=remainder(phi_sum,M_PI);
+    double maxVel=0.08, maxAcc=0.1, timeStep=0.005;
     YoubotManipulator youbotManipulator(nh);
     youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
 
     Pose startPose, endPose;
     //manipulator's start point
     startPose.position(0) = 0.32;
-    startPose.position(1) = 0;
-    startPose.position(2) = 0.05;
+    startPose.position(1) = 0.1;
+    startPose.position(2) = 0.1;
     startPose.orientation(0) = M_PI;
     startPose.orientation(1) = 0;
 
@@ -59,7 +59,7 @@ int main(int argc, char  ** argv)
     endPose.position(1) = curr_coord(0);
     endPose.position(2) = curr_coord(2);
     endPose.orientation(0) = M_PI;
-    endPose.orientation(1) = phi_sum;
+    endPose.orientation(1) = 0;
 
     std::cout<<"start_point:"<<std::endl;
     startPose.position.print();
@@ -75,23 +75,40 @@ int main(int argc, char  ** argv)
     double timeToGrasp=0.1;
     double deltaTime=t_end-traj.getTrajectoryTime()-timeToGrasp;
 
-    if(deltaTime<0.1){
+    if(deltaTime<timeToGrasp){
         ROS_WARN("Not feasible to grasp!");
         deltaTime=0;
     }
 
     // Acception step
     std::string acception = "y";
-    std::cout << "Start trajectory test? (y, n)"; std::cin >> acception;
-    if (acception != "y") return 1;
-    youbotManipulator.moveGripper(0.0115);
-    // stateValues.print();
-    // ros::spin();
+    // std::cout << "Start trajectory test? (y, n)"; std::cin >> acception;
+    // if (acception != "y") return 1;
+    ros::Time startTime=ros::Time::now();
+
+    double gropened = 0.0115;
+    double grclosed = 0;
+    youbotManipulator.moveGripper(gropened);
+    
+    //run conveyor simulaniously with manipulator
+    std::system("sshpass -p maker ssh -o StrictHostKeyChecking=no  robot@192.168.0.53 'python3 /home/robot/matsuev/line.py ' &");
+    //time between executing ssh command and running ev3 is 9 sec
+    //waiting until lego ev3 will run
+    ros::Duration(8).sleep();
+
     youbotManipulator.moveToLineTrajectory(startPose, endPose);
-    // ros::Duration(deltaTime).sleep();
-    //take object
-    // youbotManipulator.moveGripper(0.0);
+    std::cout<<(startTime-ros::Time::now()).toSec()<<"\n";
+    ros::Duration(deltaTime).sleep();
+
+    //closing gripper and taking object
+    maxVel-=0.03;
+    youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
+    Pose newendPose=endPose;
+    youbotManipulator.moveGripper(grclosed);
+    newendPose.position(1)-=0.05;
+    youbotManipulator.moveToLineTrajectory(endPose, newendPose);
+    
     //return to initial position
-    // youbotManipulator.moveToLineTrajectory(endPose, startPose);
+    youbotManipulator.moveToLineTrajectory(newendPose, startPose);
 
 }
