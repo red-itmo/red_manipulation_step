@@ -175,3 +175,241 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
         trajectory.joint_names[i] = jointName.str();
     }
 }
+
+void Trajectory::generatePowers(const int n, double* powers) {
+    powers[0] = 1.0;
+    for (int i = 2; i <= n; i++)
+        powers[i] = powers[i - 1] * powers[i];
+}
+
+std::vector<Vector3d> Trajectory::quinticSpline(const Vector3d & start_pos, const Vector3d & end_pos, const std::vector<double> & tr_time, const Vector3d & start_vel, const Vector3d & end_vel)
+{
+    /* JTRAJ Compute a joint space trajectory
+
+    [Q,QD,QDD] = JTRAJ(Q0, QF, M) is a joint space trajectory Q (MxN) where the joint
+    coordinates vary from Q0 (1xN) to QF (1xN).  A quintic (5th order) polynomial is used
+    with default zero boundary conditions for velocity and acceleration.
+    Time is assumed to vary from 0 to 1 in M steps.  Joint velocity and
+    acceleration can be optionally returned as QD (MxN) and QDD (MxN) respectively.
+    The trajectory Q, QD and QDD are MxN matrices, with one row per time step,
+    and one column per joint.
+
+    [Q,QD,QDD] = JTRAJ(Q0, QF, M, QD0, QDF) as above but also specifies
+    initial QD0 (1xN) and final QDF (1xN) joint velocity for the trajectory.
+
+    [Q,QD,QDD] = JTRAJ(Q0, QF, T) as above but the number of steps in the
+    trajectory is defined by the length of the time vector T (Mx1).
+
+    [Q,QD,QDD] = JTRAJ(Q0, QF, T, QD0, QDF) as above but specifies initial and
+    final joint velocity for the trajectory and a time vector.
+
+    Notes::
+    - When a time vector is provided the velocity and acceleration outputs
+    are scaled assumign that the time vector starts at zero and increases
+    linearly.*/
+    std::vector<double> t;
+    double tscal;
+    if (tr_time.size() > 1)
+    {
+        tscal = *std::max_element(tr_time.begin(), tr_time.end());
+        for (auto i : tr_time) {
+            t.push_back(i / tscal);
+        }
+    }
+    else
+    {
+        tscal = 1;
+        for (int i = 0; i <= tr_time[0] - 1; i++)
+            t.push_back(i / (tr_time[0] - 1)); // normalized time from 0 -> 1
+    }
+
+    // compute the polynomial coefficients
+    Vector3d A = 6.0 * (end_pos - start_pos) - 3.0 * (end_vel + start_vel) * tscal;
+    Vector3d B = -15.0 * (end_pos - start_pos) + (8.0 * start_vel + 7.0 * end_vel) * tscal;
+    Vector3d C = 10.0 * (end_pos - start_pos) - (6.0 * start_vel + 4.0 * end_vel) * tscal;
+    Vector3d E = start_vel * tscal; // as the t vector has been normalized
+    Vector3d F = start_pos;
+
+    Vector3d pos, vel, acc;
+    std::vector<Vector3d> posTra_ret;
+    for (int i = 0; i < t.size(); i++)
+    {
+        double T[6] = {t[i], t[i], t[i], t[i], t[i], t[i]};
+        generatePowers(5, T);
+        for (int j = 0; j < 3; j++)
+        {
+            pos(j) = T[5] * A(j) + T[4] * B(j) + T[3] * C(j) + T[1] * E(j) + T[0] * F(j);
+            vel(j) = (T[4] * 5 * A(j) + T[3] * 4 * B(j) + T[2] * 3 * C(j) + T[0] * E(j)) / tscal;
+            acc(j) = (T[3] * 20 * A(j) + T[2] * 12 * B(j) + T[1] * 6 * C(j)) / pow(tscal, 2);
+        }
+        posTra_ret.push_back(pos);
+        velTra.push_back(vel);
+        accTra.push_back(acc);
+        // pos.print();
+        // vel.print();
+        // acc.print();
+        // std::cout<<"pos:\n"<<pos<<"vel:\n"<<vel<<"acc:\n"<<acc;
+    }
+    return posTra_ret;
+}
+
+void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & startPose, const std::vector<Pose> & segmentsPose)
+{
+    /* TRAJ = MSTRAJ(P, QDMAX, TSEG, Q0, DT, TACC, QD0, QDF) is a trajectory
+    (KxN) for N axes moving simultaneously through M segment.  Each segment
+    is linear motion and polynomial blends connect the segments.  The axes
+    start at Q0 (1xN) and pass through M-1 via points defined by the rows of
+    the matrix P (MxN), and finish at the point defined by the last row of P.
+    The  trajectory matrix has one row per time step, and one column per
+    axis.  The number of steps in the trajectory K is a function of the
+    number of via points and the time or velocity limits that apply.
+
+    - P (MxN) is a matrix of via points, 1 row per via point, one column
+    per axis.  The last via point is the destination.
+    - QDMAX (1xN) are axis speed limits which cannot be exceeded,
+    - TSEG (1xM) are the durations for each of the K segments
+    - Q0 (1xN) are the initial axis coordinates
+    - DT is the time step
+    - TACC (1x1) is the acceleration time used for all segment transitions
+    - TACC (1xM) is the acceleration time per segment, TACC(i) is the acceleration
+    time for the transition from segment i to segment i+1.  TACC(1) is also
+    the acceleration time at the start of segment 1.
+
+    TRAJ = MSTRAJ(SEGMENTS, QDMAX, Q0, DT, TACC, QD0, QDF) additionally
+    specifies the initial and final axis velocities (1xN).
+
+    Notes::
+    - Only one of QDMAX or TSEG can be specified, the other is empty.
+    - The path length K is a function of the number of via points, Q0, DT
+    and TACC.
+    - The final via point P(end,:) is the destination.
+    - The motion has M segments from Q0 to P(1,:) to P(2,:) ... to P(end,:).
+    - All axes reach their via points at the same time. */
+
+    ROS_INFO_STREAM("calculating trj... Start position:(" << startPose.position(0) << " " << startPose.position(1) << " " << startPose.position(2) << ")");
+    ROS_INFO("via points:");
+    std::vector<Vector3d> segments;
+    for (int i = 0; i < segmentsPose.size(); i++) {
+        segments.push_back(segmentsPose[i].position);
+        ROS_INFO_STREAM("(" << segmentsPose[i].position(0) << " " << segmentsPose[i].position(1) << " " << segmentsPose[i].position(2) << ")");
+    }
+    std::vector<double> tsegment;//unspecified time
+
+    Vector3d qdmax;
+    qdmax.setAll(maxVel);//setting the same velocities for all axes: x,y,z
+    std::vector<double> Tacc;
+    Tacc.push_back(maxAccel / maxVel); //and acceleration times
+
+    if ((qdmax(0) != 0 || qdmax(1) != 0 || qdmax(2) != 0) && tsegment.size() > 0)
+    {
+        ROS_FATAL("Must specify either qdmax or tsegment, but not both");
+        return;
+    }
+
+    // set the initial conditions
+    Vector3d q_prev = startPose.position, q_next, qd_prev, dq, tl, qb, tt, qd, qdf, start_pos = startPose.position;
+    std::vector<Vector3d> qb_arr;
+    int slowest_index = 0;
+    std::vector<double> tr_time;
+
+    double clock = 0, tacc2, taccx, tacc, tseg, tb, s;
+    double arrive[segments.size()];   // record planned time of arrival at via points
+
+    for (int seg = 0; seg < segments.size(); seg++)
+    {
+        // set the blend time, just half an interval for the first segment
+        if (Tacc.size() > 1)
+            tacc = Tacc[seg];
+        else
+            tacc = Tacc[0];
+
+        tacc = ceil(tacc / dt) * dt;
+        tacc2 = ceil(tacc / 2 / dt) * dt;
+        if (seg == 0)
+            taccx = tacc2;
+        else
+            taccx = tacc;
+
+        // estimate travel time
+        // could better estimate distance travelled during the blend
+        q_next = segments[seg];    // current target
+        dq = q_next - q_prev;    // total distance to move this segment
+        if (qdmax(0) != 0 || qdmax(1) != 0 || qdmax(2) != 0)
+        {
+            // qdmax is specified, compute slowest axis
+
+            qb = taccx * qdmax / 2;        // distance moved during blend
+            tb = taccx;
+
+            for (int i = 0; i < 3; i++)
+            {
+                tl(i) = std::abs(dq(i)) / qdmax(i);
+                tl(i) = std::ceil(tl(i) / dt) * dt;
+            }
+
+            // find the total time and slowest axis
+            tt(0) = tl(0) + tb;
+            tt(1) = tl(1) + tb;
+            tt(2) = tl(2) + tb;
+            tseg = tt(0);
+            for (int i = 0; i < 3; i++)
+                if (tt(i) > tseg)
+                {
+                    tseg = tt(i);
+                    slowest_index = i;
+                }
+            if (tseg <= 2 * tacc)
+                tseg = 2 * tacc;
+        }
+        else if (tsegment.size() > 0)
+            // segment time specified, use that
+            tseg = tsegment[seg];
+        // log the planned arrival time
+        arrive[seg] = clock + tseg;
+        if (seg > 1)
+            arrive[seg] = arrive[seg] + tacc2;
+
+        // create the trajectories for this segment
+
+        // linear velocity from qprev to qnext
+        qd = dq / tseg;
+
+        // add the blend polynomial
+        tr_time.clear();
+        for (double i = 0; i < taccx; i += dt)
+            tr_time.push_back(i);
+        qb_arr = quinticSpline(start_pos, q_prev + tacc2 * qd, tr_time, qd_prev, qd);
+
+        for (int i = 1; i < qb_arr.size(); i++)
+            posTra.push_back(qb_arr[i]);
+
+        clock = clock + taccx;     // update the clock
+
+        // add the linear part, from tacc/2+dt to tseg-tacc/2
+        for (double t = tacc2 + dt; t < tseg - tacc2; t += dt)
+        {
+            Vector3d zeroAcc;
+            s = t / tseg;
+            start_pos = (1 - s) * q_prev + s * q_next;     // linear step
+            posTra.push_back(start_pos);
+            velTra.push_back(qd);
+            accTra.push_back(zeroAcc);
+            clock = clock + dt;
+        }
+
+        q_prev = q_next;    // next target becomes previous target
+        qd_prev = qd;
+    }
+    // add the final blend
+    tr_time.clear();
+    for (double i = 0; i < tacc2; i += dt)
+        tr_time.push_back(i);
+
+    qb_arr = quinticSpline(start_pos, q_next, tr_time, qd_prev, qdf);
+    for (int i = 1; i < qb_arr.size(); i++)
+        posTra.push_back(qb_arr[i]);
+
+    for (int i = 0; i < posTra.size(); i++)
+        time.push_back(dt * i);
+    ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:" << posTra.size());
+}
