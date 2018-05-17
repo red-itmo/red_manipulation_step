@@ -297,7 +297,7 @@ void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & 
     //meeting velocity limit is guaranteed(99%)
     //real acceleration may be a little higher than limit one
     //because only acceleration per axis is somehow limited unlike the sum of axes
-    Tacc.push_back(maxVel * 1.4 / maxAccel);  //and the same acceleration times
+    Tacc.push_back(maxVel * 1 / maxAccel);  //and the same acceleration times
 
     if ((qdmax(0) != 0 || qdmax(1) != 0 || qdmax(2) != 0) && tsegment.size() > 0)
     {
@@ -365,5 +365,6 @@ void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & 
     //filling time vector according to the size of position vector
     for (int i = 0; i < posTra.size(); i++)
         time.push_back(dt * i);
+    t3=posTra.size()*dt;
     ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:" << posTra.size());
 }

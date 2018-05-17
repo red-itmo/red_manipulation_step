@@ -14,7 +14,7 @@ function makeWorkSpacePlot()
     xtitle('координаты гриппера', 'Время, [c]', 'Координата, [м]');
     plot(time, pos(:,1),'b.');
     plot(time, pos(:,2),'r*');
-    plot(time, pos(:,3),'g*');
+    plot(time, pos(:,3),'g*');  
     xgrid(4);
     
     subplot(312);

@@ -37,25 +37,26 @@ int main(int argc, char *argv[])
 {
     ROS_INFO("traj test started");
     Trajectory traj;
-    double a[] = {0.2, -0.1, -0.05}; //start pose
+
+    double a[] = {0.32, 0.1, 0.1}; //start pose
     Vector3d aV(a);
     Pose q0;
     q0.position = aV;
     q0.orientation(0) = 3.14;
 
-    double b[] = {0.35, 0.1, 0.05}; //via point 1
+    double b[] = {0.35, -0.02, 0.04}; //via point 1
     Pose q1;
     q1.position = b;
 
-    double c[] = {0.2, 0.1, -0.05}; //via point 2
+    double c[] = {0.25, -0.02, 0.04}; //via point 2
     Pose q2;
     q2.position = c;
 
-    double d[] = {0.25, 0, 0.1}; //via point 3
+    double d[] = {0.35, -0.02, 0.04}; //via point 3
     Pose q3;
     q3.position = d;
 
-    double maxAcc = 0.1, qdMax = 0.1;
+    double maxAcc = 0.2, qdMax = 0.2;
     std::vector<Pose> segmentsPose;
     segmentsPose.push_back(q1);
     segmentsPose.push_back(q2);

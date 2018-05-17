@@ -42,7 +42,7 @@ int main(int argc, char  ** argv)
         curr_coord.print();
     }
     phi_sum=remainder(phi_sum,M_PI);
-    double maxVel=0.08, maxAcc=0.1, timeStep=0.005;
+    double maxVel=0.3, maxAcc=0.3, timeStep=0.005;
     YoubotManipulator youbotManipulator(nh);
     youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
 
@@ -69,7 +69,10 @@ int main(int argc, char  ** argv)
     endPose.orientation.print();
 
     Trajectory traj;
-    traj.calculateWorkSpaceTrajectory(maxVel, maxAcc, startPose, endPose, timeStep);
+    // traj.calculateWorkSpaceTrajectory(maxVel, maxAcc, startPose, endPose, timeStep);
+    std::vector<Pose> segmentsPose;
+    segmentsPose.push_back(endPose);
+    traj.mstraj(maxVel, timeStep, maxAcc, startPose, segmentsPose);
     std::cout<<"actual time to complete trajectory:"<< traj.getTrajectoryTime()<<std::endl;
 
     double timeToGrasp=0.1;
@@ -89,26 +92,31 @@ int main(int argc, char  ** argv)
     double gropened = 0.0115;
     double grclosed = 0;
     youbotManipulator.moveGripper(gropened);
-    
+
     //run conveyor simulaniously with manipulator
-    std::system("sshpass -p maker ssh -o StrictHostKeyChecking=no  robot@192.168.0.53 'python3 /home/robot/matsuev/line.py ' &");
+    // std::system("sshpass -p maker ssh -o StrictHostKeyChecking=no  robot@192.168.0.53 'python3 /home/robot/matsuev/line.py ' &");
+
     //time between executing ssh command and running ev3 is 9 sec
     //waiting until lego ev3 will run
-    ros::Duration(8).sleep();
+    // ros::Duration(8).sleep();
 
-    youbotManipulator.moveToLineTrajectory(startPose, endPose);
-    std::cout<<(startTime-ros::Time::now()).toSec()<<"\n";
-    ros::Duration(deltaTime).sleep();
+    // youbotManipulator.moveToLineTrajectory(startPose, endPose);
+    // std::cout<<(startTime-ros::Time::now()).toSec()<<"\n";
+    // ros::Duration(deltaTime).sleep();
 
     //closing gripper and taking object
-    maxVel-=0.03;
+    // maxVel-=0.03;
     youbotManipulator.setConstraints(maxAcc, maxVel, timeStep);
-    Pose newendPose=endPose;
-    youbotManipulator.moveGripper(grclosed);
-    newendPose.position(1)-=0.05;
-    youbotManipulator.moveToLineTrajectory(endPose, newendPose);
-    
+    endPose.position(1)-=0.05;
+    segmentsPose.push_back(endPose);
+    segmentsPose.push_back(startPose);
+    youbotManipulator.moveToLineTrajectory(startPose, segmentsPose);
+    // Pose newendPose=endPose;
+    // youbotManipulator.moveGripper(grclosed);
+    // newendPose.position(1)-=0.05;
+    // youbotManipulator.moveToLineTrajectory(endPose, endPose);
+
     //return to initial position
-    youbotManipulator.moveToLineTrajectory(newendPose, startPose);
+    // youbotManipulator.moveToLineTrajectory(endPose, startPose);
 
 }

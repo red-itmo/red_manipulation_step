@@ -30,6 +30,7 @@ class YoubotManipulator
         void moveGripper(double jointValue);
 
         void moveToLineTrajectory(const Pose & startPose, const Pose & endPose);
+        void moveToLineTrajectory(const Pose & startPose, const std::vector<Pose> & segmentsPose);
         void moveArmLoop();
 
         void initArmTopics();

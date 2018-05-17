@@ -39,6 +39,7 @@ public:
     ~TrajectoryGenerator();
 
     std::vector<JointValues> calculateTrajectory(const Pose & startPose, const Pose & endPose);
+    std::vector<JointValues> calculateTrajectory(const Pose & startPose, const std::vector<Pose> & segmentsPose);
 
     void setMaxVelocity(const double maxVel);
     void setMaxAcceleration(const double maxAccel);
