@@ -18,7 +18,7 @@ public:
     void exponencialMovingAvarage(std::vector<JointValues> & data, std::vector<JointValues> & movingAvarage, const double alpha);
     double getTrajectoryTime();
     void generatePowers(const int n, double* powers);
-    std::vector<Vector3d> quinticSpline(const Vector3d & start_pos, const Vector3d & end_pos, const std::vector<double> & tr_time, const Vector3d & start_vel, const Vector3d & end_vel);
+    void quinticSpline(const Vector3d & start_pos, const Vector3d & end_pos, const std::vector<double> & tr_time, const Vector3d & start_vel, const Vector3d & end_vel);
     void mstraj(double maxVel, double dt, double maxAccel, const Pose & startPose, const std::vector<Pose> & segmentsPose);
 
     std::vector<JointValues> qTra, qdotTra, qdotdotTra;
