@@ -331,13 +331,13 @@ void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & 
         dq = next_pos - prev_pos;    // total distance to move this segment
         tseg = dq.norm() / maxVel + taccx;
         //const speed motion time should be more than acceleration plus decceleration time
-        if (tseg <= 2 * tacc)
-            tseg = 2 * tacc + tacc / 2;
+        if (tseg < 2 * tacc)
+            tseg = 2 * tacc;
         // linear velocity from qprev to qnext
         cur_vel = dq / (tseg - taccx);
         // add the blend polynomial
         tr_time.clear();
-        for (double i = 0; i <= tacc * 3; i += dt)
+        for (double i = 0; i <= tacc * 2.5; i += dt)
             tr_time.push_back(i);
         quinticSpline(prev_pos, prev_pos + tacc2 * cur_vel, tr_time, prev_vel, cur_vel);
         cur_pos = posTra.back();
@@ -357,9 +357,8 @@ void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & 
     }
     // add the final blend
     tr_time.clear();
-    for (double i = 0; i < tacc * 3; i += dt)
+    for (double i = 0; i < tacc * 2.5; i += dt)
         tr_time.push_back(i);
-    // std::cout<<"LASTcur_pos:\n"<<prev_pos<<"end_pos:\n"<<next_pos<< "prev_vel:\n"<<prev_vel<< "\n";
     quinticSpline(prev_pos, next_pos, tr_time, prev_vel, qdf);
 
     //filling time vector according to the size of position vector
