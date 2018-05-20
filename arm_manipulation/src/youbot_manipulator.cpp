@@ -204,11 +204,11 @@ bool YoubotManipulator::serviceTurnOnMotors(std_srvs::Empty::Request& request, s
 
     std_srvs::Empty empty;
     ros::service::call("arm_1/switchOnMotors", empty);
-    ros::service::call("base/switchOnMotors", empty);
+    // ros::service::call("base/switchOnMotors", empty);
     return true;
 }
 
-bool YoubotManipulator::goToInitAndRelax()
+bool YoubotManipulator::serviceTurnOffMotors(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
     setConstraints(0.05,0.05,0.2);
     JointValues initAngles;
@@ -216,17 +216,25 @@ bool YoubotManipulator::goToInitAndRelax()
     initAngles(2)=-0.1;
     initAngles(4)=0.2;
     moveArm(initAngles);
+
     //kill Motors
     std_srvs::Empty empty;
     ros::service::call("arm_1/switchOffMotors", empty);
-    ros::service::call("base/switchOffMotors", empty);
-    ROS_INFO("Motors turned off!");
+    // ros::service::call("base/switchOffMotors", empty);
+    ROS_INFO("Arm turned off!");
+    return true;
+}
 
-    ros::spinOnce();
+bool YoubotManipulator::goToInitAndRelax()
+{
+    // ros::spinOnce();
+    ros::ServiceClient srvTurnOffMotorsClient = nh.serviceClient<std_srvs::Empty>("/arm_manipulation/switchOffMotors", false);
+    ROS_INFO_STREAM("[Arm Manipulation] To turn motors off call /arm_manipulation/switchOffMotors...");
+    srvRelaxMotorsServer = nh.advertiseService("/arm_manipulation/switchOffMotors", &YoubotManipulator::serviceTurnOffMotors, this);
 
-    ros::ServiceClient srvRelaxMotorsClient = nh.serviceClient<std_srvs::Empty>("switchOnMotors", false);
-    ROS_INFO_STREAM("[Arm Manipulation] To turn motors on call /switchOnMotors...");
-    srvRelaxMotorsServer = nh.advertiseService("switchOnMotors", &YoubotManipulator::serviceTurnOnMotors, this);
+    ros::ServiceClient srvRelaxMotorsClient = nh.serviceClient<std_srvs::Empty>("/arm_manipulation/switchOnMotors", false);
+    ROS_INFO_STREAM("[Arm Manipulation] To turn motors on call /arm_manipulation/switchOnMotors...");
+    srvAliveMotorsServer = nh.advertiseService("/arm_manipulation/switchOnMotors", &YoubotManipulator::serviceTurnOnMotors, this);
 
     ros::spin();
 }

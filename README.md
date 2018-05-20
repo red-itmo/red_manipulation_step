@@ -15,11 +15,19 @@ To start trajectory test run
 ```
 roslaunch arm_manipulation trajectory_test.launch
 ```
-To go to initial position and turn off motors run
+
+To turn off and go to initial position or turn on motors start goToInitAndRelax node
 ```
 rosrun arm_manipulation goToInitAndRelax
 ```
-
+and run
+```
+rosservice call /arm_manipulation/switchOffMotors
+```
+or
+```
+rosservice call /arm_manipulation/switchOnMotors
+```
 <!-- 2. Start cv - manipulation control node
 ```
 rosrun manipulation_control_node start_node
