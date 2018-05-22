@@ -1,8 +1,8 @@
 # Installation
 
-1. run git clone
+1. To copy this project run
 ```
-https://github.com/red-itmo/red_manipulation_step.git
+git clone https://github.com/red-itmo/red_manipulation_step.git
 ```
 
 2. Place "matrix" library to /usr/include (https://github.com/PX4/Matrix)
@@ -16,17 +16,26 @@ To start trajectory test run
 roslaunch arm_manipulation trajectory_test.launch
 ```
 
-To turn off and go to initial position or turn on motors start goToInitAndRelax node
+## Node goToIntAndRelax
+Start node
 ```
 rosrun arm_manipulation goToInitAndRelax
 ```
-and run
+To turn off and go to initial position and/or turn on motors run
 ```
 rosservice call /arm_manipulation/switchOffMotors
-```
-or
-```
 rosservice call /arm_manipulation/switchOnMotors
+```
+
+## Node start_manipulation
+Start
+```
+roslaunch arm_manipulation start_manipulation.launch
+```
+To move gripper to some position or to move from one point to another run
+```
+rosservice call /manipulator_pose
+rosservice call /MoveLine
 ```
 <!-- 2. Start cv - manipulation control node
 ```
