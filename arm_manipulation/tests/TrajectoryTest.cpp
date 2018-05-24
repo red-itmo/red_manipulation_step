@@ -16,19 +16,24 @@ int main(int argc, char  ** argv)
     // Trajectory params
     double timeStep, maxVel, maxAcc;
     std::vector<double> startPosition, endPosition;
+    int test_amount;
 
-    bool reading = nh.getParam("/trajectory_test/startPosition", startPosition);
-
-    nh.getParam("/trajectory_test/endPosition", endPosition);
-    nh.getParam("/trajectory_test/startPosition", startPosition);
+    nh.getParam("/trajectory_test/test_amount", test_amount);
+    bool reading = nh.getParam("/trajectory_test/startPosition_0", startPosition);
     nh.param("/trajectory_test/a_m", maxAcc, 0.1);
     nh.param("/trajectory_test/v_m", maxVel, 0.05);
     nh.param("/trajectory_test/time_step", timeStep, 0.2);
 
-    if (!reading) {
+    if (!reading){
         ROS_FATAL_STREAM("[WST test] Parameters launch file is not found.");
         return 1;
-    } else {
+    }
+
+    for(int i=0;i<test_amount;i++){
+        // std::cout<<"/trajectory_test/startPosition"+std::to_string(i);
+        nh.getParam("/trajectory_test/endPosition_"+std::to_string(i), endPosition);
+        nh.getParam("/trajectory_test/startPosition_"+std::to_string(i), startPosition);
+
         ROS_INFO_STREAM("[WST test] Start position ("
                         << startPosition[0]
                         << ", " << startPosition[1]
@@ -45,7 +50,6 @@ int main(int argc, char  ** argv)
         ROS_INFO_STREAM("[WST test] Max vel.: " << maxVel);
         ROS_INFO_STREAM("[WST test] Max accel.: " << maxAcc);
         ROS_INFO_STREAM("[WST test] Time step: " << timeStep);
-    }
 
     // Acception step
     std::string acception = "y";
@@ -70,8 +74,5 @@ int main(int argc, char  ** argv)
     endPose.orientation(1) = endPosition[4];
 
     youbotManipulator.moveToLineTrajectory(startPose, endPose);
-
-    ROS_INFO("Ready to receive another service command!");
-    youbotManipulator.moveArmLoop();
-
+    }
 }

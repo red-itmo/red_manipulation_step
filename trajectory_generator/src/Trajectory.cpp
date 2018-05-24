@@ -30,6 +30,11 @@ double Trajectory::getVel(double time)
     return 0;
 }
 
+double Trajectory::getTrajectoryTime()
+{
+    return t3;
+}
+
 void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double maxAccel, const Pose & startPose, const Pose & endPose, const double timeStep)
 {
     this->maxAccel = maxAccel;
@@ -61,7 +66,7 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
     Vector3d currCoord = startPose.position;
     Vector3d currVel;
 
-    for (double currentTime = 0; currentTime < t3; currentTime += timeStep)
+    for (double currentTime = 0; currentTime < t3+2*timeStep; currentTime += timeStep)
     {
         currVel = movementDirection * getVel(currentTime);
         velTra.push_back(currVel);
@@ -105,6 +110,9 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
     {
         curConf = poses[i];
         ang = solver.calcMaxRot(curConf.position);
+        //if error occured
+        if(ang(0)==-1000)
+            return;
 
         theta = ang(0) + ang(1) + ang(2);
         offset = 0;

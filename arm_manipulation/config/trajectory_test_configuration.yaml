@@ -1,5 +1,21 @@
-startPosition: [0.26, 0, 0.1, 2.9, 0]
-endPosition: [0.26, 0, 0.2, 2.9, 0]
-v_m: 0.05
-a_m: 0.1
+test_amount: 1
+startPosition_0: [0.35, 0.1, -0.05, 2.9, 0]
+endPosition_0: [0.35, -0.2, -0.05, 2.9, 0]
+v_m: 0.1
+a_m: 0.15
 time_step: 0.05
+
+startPosition_1: [0.29, -0.1, 0.1, 2.9, 0]
+endPosition_1: [0.29, 0.12, 0.1, 2.9, 0]
+
+startPosition_2: [0.29, 0.12, 0.1, 2.9, 0]
+endPosition_2: [0.29, 0.12, 0.2, 2.9, 0]
+
+startPosition_3: [0.32, 0.12, 0, 2.9, 0]
+endPosition_3: [0.32, -0.1, 0, 2.9, 0]
+
+startPosition_4: [0.38, 0.1, 0, 2.9, 0]
+endPosition_4: [0.38, -0.1, 0, 2.9, 0]
+
+startPosition_5: [0.42, 0.1, 0, 2.9, 0]
+endPosition_5: [0.42, -0.1, 0, 2.9, 0]

@@ -15,6 +15,7 @@ public:
     void convertWorkSpaceToJointSpace(Pose startPose, Pose endPose, const double timeStep);
     void generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajectory);
     void exponencialMovingAvarage(std::vector<JointValues> & data, std::vector<JointValues> & movingAvarage, const double alpha);
+    double getTrajectoryTime();
 
     std::vector<JointValues> qTra, qdotTra, qdotdotTra;
     std::vector<Vector3d> posTra, velTra, accTra;
