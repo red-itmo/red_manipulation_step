@@ -8,8 +8,9 @@ jointLimits = [
     -151, 146;
     -102, 102;
     -167, 167
-]
+];
 jointLimits = jointLimits * %pi/180;
+jointOffsets = [2.9496064359, 1.1344640138, -2.5481807079, 1.7889624833, 2.9234264971];
 
 d0 = [0.024; 0; 0.096];
 d1 = [0.033; 0; 0.019];
@@ -177,7 +178,25 @@ function [P, R] = FK(q)
         d2(3)*cos(q(2)) + d3(3)*cos(q(2) + q(3)) + d*cos(q(2) + q(3) + q(4));
     ]
     P = d0 + Rz(-psi1) * (plane + d1);
-    R = getR(-psi1, theta, psi2);
+    R = getR(-psi1, theta, -psi2);
+
+endfunction
+
+function [P, R] = FK_with_gripper(q)
+    P = zeros(3);
+    R = zeros(3, 3);
+
+    psi1 = q(1);
+    theta = q(2) + q(3) + q(4);
+    psi2 = q(5);
+
+    plane = [
+        d2(3)*sin(q(2)) + d3(3)*sin(q(2) + q(3)) + (d+griperLength)*sin(q(2) + q(3) + q(4));
+        0;
+        d2(3)*cos(q(2)) + d3(3)*cos(q(2) + q(3)) + (d+griperLength)*cos(q(2) + q(3) + q(4));
+    ]
+    P = d0 + Rz(-psi1) * (plane + d1);
+    R = getR(-psi1, theta, -psi2);
 
 endfunction
 
@@ -252,33 +271,33 @@ endfunction
 
 // For testing
 function cq = kinToYoubot(q)
-    cq(1) = q(1) - jointLimits(1, 1);
-    cq(2) = q(2) - jointLimits(2, 1);
-    cq(3) = q(3) - jointLimits(3, 2);
-    cq(4) = q(4) - jointLimits(4, 1);
-    cq(5) = q(5) - jointLimits(5, 1);
+    cq(1) = jointOffsets(1) - q(1);
+    cq(2) = q(2) + jointOffsets(2);
+    cq(3) = q(3) + jointOffsets(3);
+    cq(4) = q(4) + jointOffsets(4);
+    cq(5) = jointOffsets(5) - q(5);
 endfunction
 function cq = youbotToKin(q)
-    cq(1) = q(1) + jointLimits(1, 1);
-    cq(2) = q(2) + jointLimits(2, 1);
-    cq(3) = q(3) + jointLimits(3, 2);
-    cq(4) = q(4) + jointLimits(4, 1);
-    cq(5) = q(5) + jointLimits(5, 1);
+    cq(1) = jointOffsets(1) - q(1);
+    cq(2) = q(2) - jointOffsets(2);
+    cq(3) = q(3) - jointOffsets(3);
+    cq(4) = q(4) - jointOffsets(4);
+    cq(5) = jointOffsets(5) - q(5);
 endfunction
 
 
 // VISUALIZATION
 function visualizationFK(q, axis, formating);
-	//if undefined
-	if axis==0 then
-		if length(get_figure_handle(1)) then
-		    h = get_figure_handle(1);
-		    axis = h.children;
-		else
-		    h = figure(1);
-		    axis = h.children;
-		end
-	end
+    //if undefined
+    if axis==0 then
+        if length(get_figure_handle(1)) then
+            h = get_figure_handle(1);
+            axis = h.children;
+        else
+            h = figure(1);
+            axis = h.children;
+        end
+    end
     a = sca(axis);
     delete(a.children);
     d = d4(3);// + d5(3);
