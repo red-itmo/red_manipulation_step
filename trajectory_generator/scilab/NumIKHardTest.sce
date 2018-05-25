@@ -6,12 +6,18 @@ exec(directory + "Trajectory.sce", -1);
 
 // Finding maximum y-rotation (theta angle);
 function ang = calcMaxRot(pos)
-    position = pos(1:3);
-    //q1= 0; // temp
-    //d4z = d4(3); // temp - length with gripper
+    P = pos(1:3) - d0;
+    sgn = sign(P(1));
+    q1 = atan(P(2), sgn*P(1));      //TODO: Check
+
     d23 = d2(3) + d3(3);
-    ang = [0; 0];
-    goal = position - d0 - d1;    // First goal
+    // Shift and rotate coordinate system
+    goal = [
+        P(1)*cos(q1) + P(2)*sin(q1);
+        -P(1)*sin(q1) + P(2)*cos(q1);
+        P(3);
+    ] - d1;
+    
 
     if d23 + d4(3) < norm(goal) then
         disp("SOLUTION not exists!");
@@ -19,7 +25,7 @@ function ang = calcMaxRot(pos)
     end
 
     cosq4 = (norm(goal)^2 - d23^2 - d4(3)^2)/(2*d23*d4(3));
-    q4 = atan(sqrt(1 - cosq4^2), cosq4);
+    q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
     q2 = atan(goal(1), goal(3)) - atan(d4(3)*sin(q4), d23 + d4(3)*cos(q4));
 
     q3 = 0;
@@ -32,13 +38,36 @@ function ang = calcMaxRot(pos)
         q3 = q3 - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
 //        disp("theta_max (correct): " + string(q2+q3+q4));
     end
+    if q4 < jointLimits(4, 1) then
+        q4 = jointLimits(4, 1);
+        d34 = norm(d3 + [d4(3)*sin(q4); 0; d4(3)*cos(q4)]);
+        cosq3 = (norm(goal)^2 - d2(3)^2 - d34^2)/(2*d2(3)*d34);
+        q3 = atan(sqrt(1 - cosq3^2), cosq3);
+        q2 = atan(goal(1), goal(3)) - atan(d34*sin(q3), d2(3) + d34*cos(q3));
+        q3 = q3 - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+//        disp("theta_max (correct): " + string(q2+q3+q4));
+    end
 
-    if q2 > jointLimits(4, 2) then
-        disp("[calcMaxRot] q2: Out of range!");
+    if q2 > jointLimits(2, 2) then
+        q2 = jointLimits(2, 2);
+        d34 = goal - d2(3)*[sin(q2); 0; cos(q2)];
+        cosq4 = (norm(d34)^2 - d3(3)^2 - d4(3)^2)/(2*d3(3)*d4(3));
+        q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
+        q23 = atan(d34(1), d34(3)) - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+        q3 = q23 - q2;
+//        disp("[calcMaxRot] q2: Out of range!");
+    end
+    if q2 < jointLimits(2, 1) then
+        q2 = jointLimits(2, 1);
+        d34 = goal - d2(3)*[sin(q2); 0; cos(q2)];
+        cosq4 = (norm(d34)^2 - d3(3)^2 - d4(3)^2)/(2*d3(3)*d4(3));
+        q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
+        q23 = atan(d34(1), d34(3)) - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+        q3 = q23 - q2;
+//        disp("[calcMaxRot] q2: Out of range!");
     end
     ang = [q2; q3; q4];
 endfunction
-
 if length(get_figure_handle(1)) then
     h = get_figure_handle(1);
     ax = h.children;
@@ -47,8 +76,13 @@ else
     ax = h.children;
 end
 
-initConfiguration = [0.35; 0.1; -0.05; %pi; 0];
-endConfiguration = [0.35; -0.2; -0.05; %pi; 0];
+// Desired orientation
+//      θ   Ψ
+ori = [%pi, 0];
+// Ψ -- not use
+
+initConfiguration = [-0.1; 0; 0.4; ori(1); 0];
+endConfiguration = [0.3; 0; 0.0; ori(1); 0];
 maxVel = 0.05; maxAccel = 0.1;
 timeStep = 0.05;
 
@@ -56,22 +90,23 @@ timeStep = 0.05;
 poses = posTra;
 T = length(time);
 
-// Calculate rotation trajectory
-// rotTraj = [];
-// confFirst = poses(:, 1);
-// confEnd = poses(:, T);
-// angles1 = calcMaxRot(confFirst);
-// angles2 = calcMaxRot(confEnd);
-// theta1 = angles1(1) + angles1(2) + angles1(3); theta2 = angles2(1) + angles2(2) + angles2(3);
-// if theta1 > %pi then
-//     theta1 = %pi;
-// end
-// if theta2 > %pi then
-//     theta2 = %pi;
-// end
+// TEMP calculation
+e1 = 0.1; off1 = 0.1;
+e3 = 0.2; off3 = 0;
+e2 = (e3 + e1)/2; off2 = (off1 + off3)/2;
+A = [...
+    e3^2, e3, 1;
+    e2^2, e2, 1;
+    2*e3, 1, 0
+];
+B = [off3; off2; 0];
 
-// rotTraj = (theta2 - theta1)/time(T) * time + theta1;
+// ax^2 + bx + c
+a1 = -20; b1 = 4; c1 = -0.1;
+a2 = 20; b2 = -8; c2 = 0.8;
 
+shft1 = 0.1;
+shft2 = 0.2;
 
 ////// ** Convert work space to joint space
 maxRot = zeros(DOF, 1);
@@ -81,24 +116,41 @@ q_traj2 = [];
 err = 0; e_iter = 0;// error
 offset = 0;
 offsets = [];
+errors = [];
 
+curConf = poses(:, 1);
+ang = calcMaxRot(curConf);
 initialAngle = zeros(DOF, 1);
-initialAngle(2) = %pi/3;
-initialAngle(3) = %pi/6;
-initialAngle(4) = %pi/6;
-
+//initialAngle(2) = ang(1);
+//initialAngle(3) = ang(2);
+//initialAngle(4) = ang(3);
 for i = 1:T;
-	curConf = poses(:, i);
+    curConf = poses(:, i);
+    sgn = sign(curConf(1));
     ang = calcMaxRot(curConf);
-    theta = ang(1) + ang(2) + ang(3); //rotTraj(i);
+    theta = ang(1) + ang(2) + ang(3);
 
-    offset = 0;
-    if (theta > %pi - 0.1) then
-        offset = (theta + 0.1 - %pi)^2;
-    else
-        offset = 0;
+    // e = θm - θd
+    err = sgn*(theta - ori(1));
+    // Stabilizing regulator; 0.1 - offset constant
+    if (err < 0) then
+        offset = 0.1;
+    elseif (err < 0.2) then
+        offset = 2.5*(err - 0.2)^2 + err;
+    elseif (err > 0.2) then
+        offset = err;
     end;
-    poses(4, i) = theta - 0.1 - offset;
+    disp("err");
+    disp(err)
+    errors = [errors, err];
+    offsets = [offsets, offset];
+//    offset = 0;
+//    if (theta > ori(1) - 0.1) then
+//        offset = (theta + 0.1 - ori(1))^2;
+//    else
+//        offset = 0;
+//    end;
+    poses(4, i) = theta - sgn*offset;
     poses(5, i) = 0;
     [q_curr, err, info] = numIK(poses(:, i), initialAngle);
     q_traj = [q_traj, q_curr];
@@ -107,11 +159,12 @@ for i = 1:T;
         disp("Caught ERROR!");
         disp("Information: ");
         disp(poses(:, i));
+        disp(offset)
         return;
     end
     initialAngle = q_curr;
 end
-animation(q_traj, size(q_traj, 2), 1, ax);
+animation(q_traj, size(q_traj, 2), 30, ax);
 
 //// plot trajectories
 if length(get_figure_handle(100)) then
