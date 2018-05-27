@@ -270,7 +270,8 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
     goal.position(0) =  position(0) - d0x - d1x;
     goal.position(1) = position(1);
     goal.position(2) =  position(2) - d0z - d1z;
-    if (d23 + d4 < goal.position.norm())
+    bool triangleExists = (goal.position.norm() < d23 + d4) && (d23 < goal.position.norm() + d4) && (d4 < goal.position.norm() + d23);
+    if (d23 + d4 < goal.position.norm() || !triangleExists)
     {
         ROS_WARN("[ArmKinematics]Solution doesn't exist!");
         jointValues.setAll(-1000);
@@ -282,9 +283,9 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
     jointValues(0) = atan2(goal.position(0), goal.position(2)) - atan2(d4 * sin(jointValues(2)), d23 + d4 * cos(jointValues(2)));
 
     jointValues(1) = 0;
-    if (jointValues(2) > jointMaxAngles[3])
+    if (jointValues(2) > jointMaxAngles[1])
     {
-        jointValues(2) = jointMaxAngles[3];
+        jointValues(2) = jointMaxAngles[1];
         Vector3d d34Vec(d4 * sin(jointValues(2)), 0, d3 + d4 * cos(jointValues(2)));
         double d34 = d34Vec.norm();
         double cosq3 = (pow(goal.position.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
