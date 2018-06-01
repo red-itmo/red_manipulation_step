@@ -17,7 +17,7 @@ catkin_package(
 )
 add_executable(work_traj_test tests/workSpaceTrajectoryTest.cpp)
 add_executable(joint_traj_test tests/jointSpaceTrajectoryTest.cpp)
-add_executable(jtraj_test tests/multisegTest.cpp)
+add_executable(multiseg_test tests/multisegTest.cpp)
 
 add_library(trajectory_lib src/Trajectory.cpp)
 
@@ -38,7 +38,7 @@ target_link_libraries(joint_traj_test
     trajectory_lib
     ${catkin_LIBRARIES}
 )
-target_link_libraries(jtraj_test
+target_link_libraries(multiseg_test
     trajectory_lib
     ${catkin_LIBRARIES}
 )

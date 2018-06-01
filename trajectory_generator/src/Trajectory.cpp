@@ -94,21 +94,31 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
     for (int i = 0; i < posTra.size(); ++i) {
         pose.position = posTra[i];
         poses.push_back(pose);
-        // pose.position.print();
-        // pose.orientation.print();
     }
 
-    double err = 0, offset = 0, theta;
+    double err, offset, theta;
     Pose curConf;
     Vector3d ang;
-    JointValues curRot, angle;
-    angle(1) = M_PI / 3;
-    angle(2) = M_PI / 6;
-    angle(3) = M_PI / 6;
+    JointValues curRot, startAngle;
+    curConf = poses.front();
+    ang = solver.calcMaxRot(curConf.position);
+    // startAngle(1) = ang(0);
+    // startAngle(2) = ang(1);
+    // startAngle(3) = ang(2);
+    // std::cout<<"startAngle:\n";
+    // startAngle.print();
+
+    //if trajectory is alreay filled
+    if(qTra.size()==poses.size())
+    {
+        ROS_WARN("Trajectory was already calculated!");
+        return;
+    }
 
     for (size_t i = 0; i < poses.size(); ++i)
     {
         curConf = poses[i];
+        int sgn = std::abs(curConf.position(0)) / curConf.position(0);
         ang = solver.calcMaxRot(curConf.position);
         //if error occured
         if(ang(0)==-1000)
@@ -116,12 +126,18 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
 
         theta = ang(0) + ang(1) + ang(2);
         offset = 0;
-        if (theta > startPose.orientation(0) - 0.1)
-            offset = pow(theta + 0.1 - startPose.orientation(0), 2);
-        else
-            offset = 0;
-        curConf.orientation(0) = theta - 0.1 - offset;
-        curRot = solver.numericalIK(curConf, angle);
+        // e = θm - θd
+        err = sgn * (theta - startPose.orientation(0));
+        // Stabilizing regulator; 0.1 - offset constant
+        if (err < 0)
+            offset = 0.1;
+        else if (err < 0.2)
+            offset = 2.5 * pow((err - 0.2),2) + err;
+        else if (err > 0.2)
+            offset = err;
+        curConf.orientation(0) = theta - sgn * offset;
+        curConf.orientation(1) = 0;
+        curRot = solver.numericalIK(curConf, startAngle);
         //if error has occured
         if(curRot(0)==-1000 || curRot(0)==-2000){
             ROS_WARN_STREAM("Trajectory soluion not found!");
@@ -136,7 +152,7 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
         qdotTra.push_back(currJntAngVel);
         qTra.push_back(curRot);
 
-        angle = solver.prevNumIKAngle;
+        startAngle = solver.prevNumIKAngle;
     }
 }
 
@@ -147,7 +163,6 @@ void Trajectory::generateTrajectoryMsg(trajectory_msgs::JointTrajectory & trajec
     double timeStep = time[1] - time[0];
 
     for (size_t p = 0; p < qTra.size(); ++p) {
-
         trajectory_msgs::JointTrajectoryPoint point;
 
         currJntAng = qTra[p];

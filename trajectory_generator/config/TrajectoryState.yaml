@@ -1,4 +1,4 @@
-start_position: [0.26, 0, 0.1]
+start_position: [-0.26, 0, 0.1]
 end_position: [0.26, 0.0, 0.2]
 angles: [3.14,3.14]
 v_m: 0.05
