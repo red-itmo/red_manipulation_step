@@ -301,6 +301,8 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
         d34 = d34Vec.norm();
         cosq3 = (pow(goal.position.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
         jointValues(1) = atan2(sqrt(1 - cosq3 * cosq3), cosq3);
+        if(std::isnan(jointValues(1)))
+            ROS_FATAL_STREAM("cosq3 is negative!!");
         // std::cout<<"jv1:"<<jointValues(1)<<"\n";
 
         jointValues(0) = atan2(goal.position(0), goal.position(2)) - atan2(d34 * sin(jointValues(1)), d2 + d34 * cos(jointValues(1)));
@@ -317,6 +319,8 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
         d34 = d34Vec.norm();
         cosq3 = (pow(goal.position.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
         jointValues(1) = atan2(sqrt(1 - cosq3 * cosq3), cosq3);
+        if(std::isnan(jointValues(1)))
+            ROS_FATAL_STREAM("cosq3 is negative!!");
 
         jointValues(0) = atan2(goal.position(0), goal.position(2)) - atan2(d34 * sin(jointValues(1)), d2 + d34 * cos(jointValues(1)));
 
@@ -331,6 +335,8 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
         d34Vec(2) = goal.position(2) - d2 * cos(jointValues(0));
         cosq4 = (pow(d34Vec.norm(), 2) - d3 * d3 - d4 * d4) / (2 * d3 * d4);
         jointValues(2) = sgn * atan2(sqrt(1 - cosq4 * cosq4), cosq4);
+        if(std::isnan(jointValues(2)))
+            ROS_FATAL_STREAM("cosq4 is negative!!");
 
         double q23 = atan2(d34Vec(0), d34Vec(2)) - atan2(d4*sin(jointValues(2)), d3 + d4*cos(jointValues(2)));
         jointValues(1) = q23 - jointValues(0);
@@ -344,6 +350,8 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
         d34Vec(2) = goal.position(2) - d2 * cos(jointValues(0));
         cosq4 = (pow(d34Vec.norm(), 2) - d3 * d3 - d4 * d4) / (2 * d3 * d4);
         jointValues(2) = sgn * atan2(sqrt(1 - cosq4 * cosq4), cosq4);
+        if(std::isnan(jointValues(2)))
+            ROS_FATAL_STREAM("cosq4 is negative!!");
 
         double q23 = atan2(d34Vec(0), d34Vec(2)) - atan2(d4*sin(jointValues(2)), d3 + d4*cos(jointValues(2)));
         jointValues(1) = q23 - jointValues(0);

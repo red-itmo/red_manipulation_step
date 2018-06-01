@@ -37,18 +37,18 @@ int main(int argc, char *argv[])
     ROS_INFO("traj test started");
     Trajectory traj;
 
-    double a[] = {-0.20, 0, 0.1}; //start pose
+    double a[] = {-0.22, 0, 0.2}; //start pose
     Vector3d aV(a);
     Pose q0;
     q0.position = aV;
     q0.orientation(0) = -3.14;
 
-    double b[] = {-0.3, 0, 0.1}; //via point 1
+    double b[] = {-0.1, 0, 0.2}; //via point 1
     Pose q1;
     q1.position = b;
     q1.orientation(0) = -3.14;
 
-    double c[] = {0.22, 0, 0.05}; //via point 2
+    double c[] = {-0.25, 0, 0.2}; //via point 2
     Pose q2;
     q2.position = c;
 
@@ -65,10 +65,10 @@ int main(int argc, char *argv[])
 
     double dt = 0.05;
     //multisegment trajectory
-    // traj.mstraj(qdMax, dt, maxAcc, q0, segmentsPose);
+    traj.mstraj(qdMax, dt, maxAcc, q0, segmentsPose);
 
     //only single segment trajectory
-    traj.calculateWorkSpaceTrajectory(qdMax, maxAcc, q0, q1, dt);
+    // traj.calculateWorkSpaceTrajectory(qdMax, maxAcc, q0, q1, dt);
 
 //--------workspace logging section-----------//
     std::ofstream logFile;
