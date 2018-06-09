@@ -6,6 +6,7 @@ exec(directory + "Trajectory.sce", -1);
 
 // Finding maximum y-rotation (theta angle);
 function ang = calcMaxRot(pos)
+    disp(pos)
     P = pos(1:3) - d0;
     sgn = sign(P(1));
     q1 = atan(P(2), sgn*P(1));      //TODO: Check
@@ -25,6 +26,7 @@ function ang = calcMaxRot(pos)
     end
 
     cosq4 = (norm(goal)^2 - d23^2 - d4(3)^2)/(2*d23*d4(3));
+//    disp(cosq4)
     q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
     q2 = atan(goal(1), goal(3)) - atan(d4(3)*sin(q4), d23 + d4(3)*cos(q4));
 
@@ -36,7 +38,7 @@ function ang = calcMaxRot(pos)
         q3 = atan(sqrt(1 - cosq3^2), cosq3);
         q2 = atan(goal(1), goal(3)) - atan(d34*sin(q3), d2(3) + d34*cos(q3));
         q3 = q3 - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
-//        disp("theta_max (correct): " + string(q2+q3+q4));
+        disp("q4 > jointLimits(4, 2)");
     end
     if q4 < jointLimits(4, 1) then
         q4 = jointLimits(4, 1);
@@ -45,17 +47,19 @@ function ang = calcMaxRot(pos)
         q3 = atan(sqrt(1 - cosq3^2), cosq3);
         q2 = atan(goal(1), goal(3)) - atan(d34*sin(q3), d2(3) + d34*cos(q3));
         q3 = q3 - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
-//        disp("theta_max (correct): " + string(q2+q3+q4));
+        disp("q4 < jointLimits(4, 1)");
     end
 
     if q2 > jointLimits(2, 2) then
+        disp("goal:" + string(goal));
         q2 = jointLimits(2, 2);
         d34 = goal - d2(3)*[sin(q2); 0; cos(q2)];
+        disp("d34:" + string(d34));
         cosq4 = (norm(d34)^2 - d3(3)^2 - d4(3)^2)/(2*d3(3)*d4(3));
         q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
         q23 = atan(d34(1), d34(3)) - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
         q3 = q23 - q2;
-//        disp("[calcMaxRot] q2: Out of range!");
+        disp("q2 > jointLimits(2, 2)");
     end
     if q2 < jointLimits(2, 1) then
         q2 = jointLimits(2, 1);
@@ -64,7 +68,7 @@ function ang = calcMaxRot(pos)
         q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
         q23 = atan(d34(1), d34(3)) - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
         q3 = q23 - q2;
-//        disp("[calcMaxRot] q2: Out of range!");
+        disp("q2 < jointLimits(2, 2)");
     end
     ang = [q2; q3; q4];
 endfunction
@@ -81,8 +85,8 @@ end
 ori = [%pi, 0];
 // Ψ -- not use
 
-initConfiguration = [-0.1; 0; 0.4; ori(1); 0];
-endConfiguration = [0.3; 0; 0.0; ori(1); 0];
+initConfiguration = [0.33; 0.1; 0.0; ori(1); 0];
+endConfiguration = [0.33; 0.1; -0.09; ori(1); 0];
 maxVel = 0.05; maxAccel = 0.1;
 timeStep = 0.05;
 
@@ -121,9 +125,9 @@ errors = [];
 curConf = poses(:, 1);
 ang = calcMaxRot(curConf);
 initialAngle = zeros(DOF, 1);
-//initialAngle(2) = ang(1);
-//initialAngle(3) = ang(2);
-//initialAngle(4) = ang(3);
+initialAngle(2) = ang(1);
+initialAngle(3) = ang(2);
+initialAngle(4) = ang(3);
 for i = 1:T;
     curConf = poses(:, i);
     sgn = sign(curConf(1));
@@ -140,8 +144,8 @@ for i = 1:T;
     elseif (err > 0.2) then
         offset = err;
     end;
-    disp("err");
-    disp(err)
+//    disp("err");
+//    disp(err)
     errors = [errors, err];
     offsets = [offsets, offset];
 //    offset = 0;
@@ -177,7 +181,7 @@ else
 end
 for i = 1:3
     n = size(q_traj, 2);
-    subplot(3, 1, i);
+    subplot(3, 2, i + 1);
 
     plot(time(1:n), q_traj(i + 1, :));
 

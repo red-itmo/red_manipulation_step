@@ -21,11 +21,11 @@ void Trajectory::exponencialMovingAvarage(std::vector<JointValues> & data, std::
 
 double Trajectory::getVel(double time)
 {
-    if (time >= 0 && time < t1)
-        return directionSign * maxAccel * time;
+    if (time >= t0 && time < t1)
+        return directionSign * maxAccel * (time - t0);
     if (time >= t1 && time < t2)
         return directionSign * maxVel;
-    if (time >= t2 && time <= t3)
+    if (time >= t2 && time < t3)
         return directionSign * (maxVel - maxAccel * (time - t2));
     return 0;
 }
@@ -42,9 +42,11 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
     Vector3d positionDiff = endPose.position - startPose.position;
     Vector3d movementDirection = positionDiff;
     movementDirection.normalize();
-    directionSign = std::abs(positionDiff.norm()) / positionDiff.norm();
+    directionSign = sign(positionDiff.norm());
+    double t4;
 
     ROS_DEBUG_STREAM("[trajectory] Max Vel: " << maxVel << " Max Accel: " << maxAccel << " TimeStep: " << timeStep);
+
     // Calculate trajectory times
     t1 = maxVel / maxAccel;
     t2 = positionDiff.norm() / maxVel;
@@ -55,7 +57,14 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
     }
     t3 = t2 + t1;
 
+    // Shift time
+    t0 = 5*timeStep;
+    t1 += t0;
+    t2 += t0;
+    t3 += t0;
+    t4 = t3 + t0;
 
+    // ROS_INFO_STREAM("t0: " << t0);
     ROS_INFO_STREAM("[Trajectory] Time variables (" << t1 << ", " << t2 << ", " << t3 << ")");
 
     if (t2 < t1)
@@ -66,15 +75,15 @@ void Trajectory::calculateWorkSpaceTrajectory(const double maxVel, const double 
     Vector3d currCoord = startPose.position;
     Vector3d currVel;
 
-    for (double currentTime = 0; currentTime < t3+2*timeStep; currentTime += timeStep)
+    for (double currentTime = 0; currentTime < t4; currentTime += timeStep)
     {
         currVel = movementDirection * getVel(currentTime);
         velTra.push_back(currVel);
         posTra.push_back(currCoord);
         time.push_back(currentTime);
-        currCoord += timeStep / 2 * (currVel + movementDirection * getVel(currentTime + timeStep));
+        currCoord += timeStep / 2 * (currVel + movementDirection * getVel(currentTime));
     }
-    ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:"<<posTra.size());
+    ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:" << posTra.size());
 }
 
 void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose, const double timeStep)
@@ -102,14 +111,15 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
     JointValues curRot, startAngle;
     curConf = poses.front();
     ang = solver.calcMaxRot(curConf.position);
-    // startAngle(1) = ang(0);
-    // startAngle(2) = ang(1);
-    // startAngle(3) = ang(2);
-    // std::cout<<"startAngle:\n";
-    // startAngle.print();
+    startAngle(1) = ang(0);
+    startAngle(2) = ang(1);
+    startAngle(3) = ang(2);
+
+    std::cout << "startAngle:\n" << startAngle << std::endl;
+    std::cout << "Pos:\n" << curConf.position << std::endl;
 
     //if trajectory is alreay filled
-    if(qTra.size()==poses.size())
+    if(qTra.size() == poses.size())
     {
         ROS_WARN("Trajectory was already calculated!");
         return;
@@ -118,7 +128,7 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
     for (size_t i = 0; i < poses.size(); ++i)
     {
         curConf = poses[i];
-        int sgn = std::abs(curConf.position(0)) / curConf.position(0);
+        int sgn = sign(curConf.position(0));
         ang = solver.calcMaxRot(curConf.position);
         //if error occured
         if(ang(0)==-1000)

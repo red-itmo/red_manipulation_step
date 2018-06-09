@@ -1,4 +1,5 @@
 #include <trajectory_generator/TrajectoryGenerator.h>
+#include <ros/package.h>
 #include <fstream>
 #include <ros/ros.h>
 
@@ -18,7 +19,7 @@ int main(int argc, char *argv[])
     nh.getParam("/work_traj_test/a_m", maxAcc);
     nh.getParam("/work_traj_test/v_m", maxVel);
     nh.getParam("/work_traj_test/time_step", timeStep);
-    nh.getParam("/work_traj_test/path", path);
+    path = ros::package::getPath("trajectory_generator");
 
     if (!reading) {
         ROS_FATAL_STREAM("[WST test] Parameters launch file is not found.");
@@ -67,12 +68,12 @@ int main(int argc, char *argv[])
     std::ofstream logFile;
     std::string logDirPath = path;
     std::stringstream filename;
-    filename << logDirPath << "logs/WorkSpaceTraj" << ".log";
+    filename << logDirPath << "/logs/WorkSpaceTraj" << ".log";
     std::string file = filename.str();
     logFile.open(file.c_str());
 
     if (!logFile.is_open())
-    	ROS_WARN_STREAM("file "<<  filename.str()<<" is not opened");
+        ROS_WARN_STREAM("file "<<  filename.str()<<" is not opened");
 
     ROS_INFO_STREAM("Size: " << traj.posTra.size());
     for (uint i = 0; i < traj.posTra.size(); ++i) {

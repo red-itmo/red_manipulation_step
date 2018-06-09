@@ -78,18 +78,23 @@ a = gca();
 // input - [joint values, axis, 1/0 - axis configure
 visualizationFK([0; 0; 0; 0; 0], a, 1);
 
-ang = calcMaxRot(v)
+//ang = calcMaxRot(v)
+ang = [...
+    1.5338837  
+    0.0330047  
+    1.9437422
+];
 visualizationFK([0; ang(1); ang(2); ang(3); 0], a, 0);
 
 // Initial condition
-q_i = zeros(DOF, 1);
-q_i(2) = ang(1);
-q_i(3) = ang(2);
-q_i(4) = ang(3);
-v(4) = ang(4);
-disp(v);
+//q_i = zeros(DOF, 1);
+//q_i(2) = ang(1);
+//q_i(3) = ang(2);
+//q_i(4) = ang(3);
+//v(4) = ang(4);
+//disp(v);
 
 // Solve IK (numerical method)
-[q_curr, e, info] = numIK(v, q_i);
+//[q_curr, e, info] = numIK(v, q_i);
 
-visualizationFK(q_curr, a, 1);
+//visualizationFK(q_curr, a, 1);

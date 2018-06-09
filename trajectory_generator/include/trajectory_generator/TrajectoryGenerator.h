@@ -28,7 +28,7 @@ public:
 private:
 
     double getVel(double time);
-    double t1, t2, t3, maxVel, maxAccel;
+    double t0, t1, t2, t3, maxVel, maxAccel;
     int directionSign;
     Vector3d rotVel;
 };

@@ -1,5 +1,6 @@
 #include <arm_kinematics/ArmKinematics.h>
 #include <arm_kinematics/KinematicConstants.h>
+#define KINEMATIC_DEBUG true
 
 ArmKinematics::ArmKinematics()
 {}
@@ -267,28 +268,27 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
 {
     Vector3d jointValues;
     double d23 = d2 + d3;
-    Pose goal;
-    goal.position(0) =  position(0) - d0x;
-    goal.position(1) = position(1);
-    goal.position(2) =  position(2) - d0z;
-    int sgn = std::abs(goal.position(0)) / goal.position(0);
+    double d = d4 + griperLength;
+    Vector3d goal;
+    goal = position - Vector3d(d0x, 0, d0z);
+    int sgn = sign(goal(0));
     double q1;
-    q1 = atan2(goal.position(1), sgn * goal.position(0));   //TODO: check
+    q1 = atan2(goal(1), sgn * goal(0));   //TODO: check
     // Shift and rotate coordinate system
-    goal.position(0) = goal.position(0) * cos(q1) + goal.position(0) * sin(q1) - d1x;
-    goal.position(1) = -goal.position(1) * sin(q1) + goal.position(1) * cos(q1);
-    goal.position(2) = goal.position(2) - d1z;
-    bool triangleExists = (goal.position.norm() < d23 + d4) && (d23 < goal.position.norm() + d4) && (d4 < goal.position.norm() + d23);
-    if (d23 + d4 < goal.position.norm() || !triangleExists)
+    goal(0) = goal(0) * cos(q1) + goal(1) * sin(q1) - d1x;
+    goal(1) = -goal(0) * sin(q1) + goal(1) * cos(q1);
+    goal(2) = goal(2) - d1z;
+    bool triangleExists = (goal.norm() < d23 + d) && (d23 < goal.norm() + d) && (d < goal.norm() + d23);
+    if (d23 + d < goal.norm() || !triangleExists)
     {
-        ROS_WARN("[ArmKinematics]Solution doesn't exist!");
+        ROS_WARN("[ArmKinematics] Solution doesn't exist!");
         jointValues.setAll(-1000);
         return jointValues;
     }
-    double cosq4 = (pow(goal.position.norm(), 2) - d23 * d23 - d4 * d4) / (2 * d23 * d4);
+    double cosq4 = (pow(goal.norm(), 2) - d23 * d23 - d * d) / (2 * d23 * d);
     jointValues(2) = sgn * atan2(sqrt(1 - cosq4 * cosq4), cosq4);
 
-    jointValues(0) = atan2(goal.position(0), goal.position(2)) - atan2(d4 * sin(jointValues(2)), d23 + d4 * cos(jointValues(2)));
+    jointValues(0) = atan2(goal(0), goal(2)) - atan2(d * sin(jointValues(2)), d23 + d * cos(jointValues(2)));
 
     jointValues(1) = 0;
     Vector3d d34Vec;
@@ -296,67 +296,83 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
     if (jointValues(2) > jointMaxAngles[3])
     {
         jointValues(2) = jointMaxAngles[3];
-        d34Vec(0) = d4 * sin(jointValues(2));
+        d34Vec(0) = d * sin(jointValues(2));
         d34Vec(1) = 0;
-        d34Vec(2) = d3 + d4 * cos(jointValues(2));
+        d34Vec(2) = d3 + d * cos(jointValues(2));
         d34 = d34Vec.norm();
-        cosq3 = (pow(goal.position.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
+        cosq3 = (pow(goal.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
         jointValues(1) = atan2(sqrt(1 - cosq3 * cosq3), cosq3);
         if(std::isnan(jointValues(1)))
             ROS_FATAL_STREAM("cosq3 is negative!!");
         // std::cout<<"jv1:"<<jointValues(1)<<"\n";
 
-        jointValues(0) = atan2(goal.position(0), goal.position(2)) - atan2(d34 * sin(jointValues(1)), d2 + d34 * cos(jointValues(1)));
+        jointValues(0) = atan2(goal(0), goal(2)) - atan2(d34 * sin(jointValues(1)), d2 + d34 * cos(jointValues(1)));
+        jointValues(1) = jointValues(1) - atan2(d * sin(jointValues(2)), d3 + d * cos(jointValues(2)));
 
-        jointValues(1) = jointValues(1) - atan2(d4 * sin(jointValues(2)), d3 + d4 * cos(jointValues(2)));
+        if (KINEMATIC_DEBUG)
+            ROS_INFO("jointValues(2) > jointMaxAngles[3]");
     }
 
     if (jointValues(2) < jointMinAngles[3])
     {
         jointValues(2) = jointMinAngles[3];
-        d34Vec(0) = d4 * sin(jointValues(2));
+        d34Vec(0) = d * sin(jointValues(2));
         d34Vec(1) = 0;
-        d34Vec(2) = d3 + d4 * cos(jointValues(2));
+        d34Vec(2) = d3 + d * cos(jointValues(2));
         d34 = d34Vec.norm();
-        cosq3 = (pow(goal.position.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
+        cosq3 = (pow(goal.norm(), 2) - d2 * d2 - d34 * d34) / (2 * d2 * d34);
         jointValues(1) = atan2(sqrt(1 - cosq3 * cosq3), cosq3);
         if(std::isnan(jointValues(1)))
             ROS_FATAL_STREAM("cosq3 is negative!!");
 
-        jointValues(0) = atan2(goal.position(0), goal.position(2)) - atan2(d34 * sin(jointValues(1)), d2 + d34 * cos(jointValues(1)));
+        jointValues(0) = atan2(goal(0), goal(2)) - atan2(d34 * sin(jointValues(1)), d2 + d34 * cos(jointValues(1)));
+        jointValues(1) = jointValues(1) - atan2(d * sin(jointValues(2)), d3 + d * cos(jointValues(2)));
 
-        jointValues(1) = jointValues(1) - atan2(d4 * sin(jointValues(2)), d3 + d4 * cos(jointValues(2)));
+        if (KINEMATIC_DEBUG)
+            ROS_INFO("jointValues(2) < jointMaxAngles[3]");
     }
 
     if (jointValues(0) > jointMaxAngles[1])
     {
         jointValues(0) = jointMaxAngles[1];
-        d34Vec(0) = goal.position(0) - d2 * sin(jointValues(0));
-        d34Vec(1) = goal.position(1);
-        d34Vec(2) = goal.position(2) - d2 * cos(jointValues(0));
-        cosq4 = (pow(d34Vec.norm(), 2) - d3 * d3 - d4 * d4) / (2 * d3 * d4);
+        d34Vec(0) = goal(0) - d2 * sin(jointValues(0));
+        d34Vec(1) = goal(1);
+        d34Vec(2) = goal(2) - d2 * cos(jointValues(0));
+        cosq4 = (pow(d34Vec.norm(), 2) - d3 * d3 - d * d) / (2 * d3 * d);
         jointValues(2) = sgn * atan2(sqrt(1 - cosq4 * cosq4), cosq4);
         if(std::isnan(jointValues(2)))
             ROS_FATAL_STREAM("cosq4 is negative!!");
 
-        double q23 = atan2(d34Vec(0), d34Vec(2)) - atan2(d4*sin(jointValues(2)), d3 + d4*cos(jointValues(2)));
+        double q23 = atan2(d34Vec(0), d34Vec(2)) - atan2(d*sin(jointValues(2)), d3 + d*cos(jointValues(2)));
         jointValues(1) = q23 - jointValues(0);
+
+        if (KINEMATIC_DEBUG)
+            ROS_INFO("jointValues(0) > jointMaxAngles[1]");
     }
 
     if (jointValues(0) < jointMinAngles[1])
     {
         jointValues(0) = jointMinAngles[1];
-        d34Vec(0) = goal.position(0) - d2 * sin(jointValues(0));
-        d34Vec(1) = goal.position(1);
-        d34Vec(2) = goal.position(2) - d2 * cos(jointValues(0));
-        cosq4 = (pow(d34Vec.norm(), 2) - d3 * d3 - d4 * d4) / (2 * d3 * d4);
+        d34Vec(0) = goal(0) - d2 * sin(jointValues(0));
+        d34Vec(1) = goal(1);
+        d34Vec(2) = goal(2) - d2 * cos(jointValues(0));
+        cosq4 = (pow(d34Vec.norm(), 2) - d3 * d3 - d * d) / (2 * d3 * d);
         jointValues(2) = sgn * atan2(sqrt(1 - cosq4 * cosq4), cosq4);
         if(std::isnan(jointValues(2)))
             ROS_FATAL_STREAM("cosq4 is negative!!");
 
-        double q23 = atan2(d34Vec(0), d34Vec(2)) - atan2(d4*sin(jointValues(2)), d3 + d4*cos(jointValues(2)));
+        double q23 = atan2(d34Vec(0), d34Vec(2)) - atan2(d*sin(jointValues(2)), d3 + d*cos(jointValues(2)));
         jointValues(1) = q23 - jointValues(0);
+
+        if (KINEMATIC_DEBUG)
+            ROS_INFO("jointValues(0) < jointMaxAngles[1]");
     }
+
+
+    if (KINEMATIC_DEBUG)
+        std::cout << "goal: \n" << goal << std::endl;
+        std::cout << "d34: \n" << d34Vec << std::endl;
+
     return jointValues;
 }
 
@@ -366,6 +382,12 @@ Vector3d ArmKinematics::ForwardKin(const JointValues &angles)
 
     return transformFromFrame5ToFrame0(angles, zeros);
 }
+Vector3d ArmKinematics::ForwardKinWithGripper(const JointValues &angles)
+{
+    Vector3d vec(0, 0, griperLength);
+
+    return transformFromFrame5ToFrame0(angles, vec);
+}
 
 matrix::SquareMatrix<double, 5> ArmKinematics::Jacobian(const JointValues &angles)
 {
@@ -373,7 +395,7 @@ matrix::SquareMatrix<double, 5> ArmKinematics::Jacobian(const JointValues &angle
     Vector3d d;
     d(0) = 0;
     d(1) = 0;
-    d(2) = d4;
+    d(2) = d4 + griperLength;
 
     j(0, 0) = -sin(angles(0)) * (d1x + d2 * sin(angles(1)) + d3 * sin(angles(2) + angles(1)) + d(2) * sin(angles(3) + angles(2) + angles(1)));
     j(1, 0) = cos(angles(0)) * (d1x + d2 * sin(angles(1)) + d3 * sin(angles(2) + angles(1)) + d(2) * sin(angles(3) + angles(2) + angles(1)));
@@ -426,7 +448,7 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, JointValues q)
     poseAndRot(4) = pose.orientation(1);
 
     // Solve FK
-    Vector3d FKoutput = ForwardKin(q);
+    Vector3d FKoutput = ForwardKinWithGripper(q);
     matrixFK(0) = FKoutput(0);
     matrixFK(1) = FKoutput(1);
     matrixFK(2) = FKoutput(2);
@@ -443,7 +465,7 @@ JointValues ArmKinematics::numericalIK(const Pose &pose, JointValues q)
         dq = temp*j.transpose() * error;
         q += dq;
 
-        FKoutput = ForwardKin(q);
+        FKoutput = ForwardKinWithGripper(q);
         matrixFK(0) = FKoutput(0);
         matrixFK(1) = FKoutput(1);
         matrixFK(2) = FKoutput(2);

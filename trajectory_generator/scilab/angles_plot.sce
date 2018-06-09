@@ -1,51 +1,58 @@
 directory = get_absolute_file_path("angles_plot.sce");
+exec(directory + "kinematic.sce", -1);
+
 global results;
 function makeWorkSpacePlot()
     global results;
     filePath=directory+"../logs/WorkSpaceTraj.log"
-    results=read(filePath, -1, 10);
+    results=read(filePath, -1, 4);
     i=1;
-    pos=[results(:,i),...
-    results(:,i+1),results(:,i+2),results(:,i+3),...
-    results(:,i+4),results(:,i+5),results(:,i+6),...
-    results(:,i+7),results(:,i+8),results(:,i+9)];
+//    pos=[results(:,i),...
+//    results(:,i+1),results(:,i+2),results(:,i+3),...
+//    results(:,i+4),results(:,i+5),results(:,i+6),...
+//    results(:,i+7),results(:,i+8),results(:,i+9)];
+    pos=[results(:, 1), results(:, 2), results(:, 3)];
     time=results(:,size(results,2));
-    subplot(311);
+//    subplot(311);
     xtitle('координаты гриппера', 'Время, [c]', 'Координата, [м]');
     plot(time, pos(:,1),'b.');
     plot(time, pos(:,2),'r*');
     plot(time, pos(:,3),'g*');  
     xgrid(4);
     
-    subplot(312);
-    xtitle('скорость гриппера', 'Время, [c]', 'скорость, [м/с]');
-    plot(time, pos(:,4),'b.');
-    plot(time, pos(:,5),'r*');
-    plot(time, pos(:,6),'g*');
-    xgrid(4);
-    subplot(313);
-    xtitle('ускорение гриппера', 'Время, [c]', 'ускорение, [м/с2]');
-    plot(time, pos(:,7),'b.');
-    plot(time, pos(:,8),'r*');
-    plot(time, pos(:,9),'g*');
+//    subplot(312);
+//    xtitle('скорость гриппера', 'Время, [c]', 'скорость, [м/с]');
+//    plot(time, pos(:,2),'b.');
+//    plot(time, pos(:,5),'r*');
+//    plot(time, pos(:,6),'g*');
+//    xgrid(4);
+//    subplot(313);
+//    xtitle('ускорение гриппера', 'Время, [c]', 'ускорение, [м/с2]');
+//    plot(time, pos(:,3),'b.');
+//    plot(time, pos(:,8),'r*');
+//    plot(time, pos(:,9),'g*');
     xgrid(4);
     legend(['x','y','z'],opt=3);
 endfunction
 
-makeWorkSpacePlot();
-return;
+//makeWorkSpacePlot();
+//return;
 
 filePath=directory+"../logs/JointSpaceTraj.log"
 results=read(filePath, -1, 11);
 RAD2DEG = 180/%pi;
 RAD2DEG = 1;
 i=1;//angles
-i=6;//speed
+//i=6;//speed
 angle=[results(:,i)*RAD2DEG,...
 results(:,i+1)*RAD2DEG,...
 results(:,i+2)*RAD2DEG,...
 results(:,i+3)*RAD2DEG,...
 results(:,i+4)*RAD2DEG];
+
+for i = 1:length(results(:, i))
+    angle(i, :) = youbotToKin(angle(i, :))';
+end
 if i==1 then
     text='положение звена';
 else

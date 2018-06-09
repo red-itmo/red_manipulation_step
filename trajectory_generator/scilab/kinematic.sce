@@ -1,15 +1,22 @@
-directory = get_absolute_file_path("kinematic.sce");
+sdirectory = get_absolute_file_path("kinematic.sce");
 exec(directory + "math.sce");
 
 DOF = 5;
+//jointLimits = [
+//    -169, 169;
+//    -65,  90;
+//    -151, 146;
+//    -102, 102;
+//    -167, 167
+//];
+//jointLimits = jointLimits * %pi/180;
 jointLimits = [
-    -169, 169;
-    -65,  90;
-    -151, 146;
-    -102, 102;
-    -167, 167
-];
-jointLimits = jointLimits * %pi/180;
+    -2.8905336, 2.9395372;
+    -1.1243948, 1.483526;
+    -2.4783693, 2.5324727;
+    -1.7668386, 1.6402375;
+    -2.7181635, 2.8128075
+]
 jointOffsets = [2.9496064359, 1.1344640138, -2.5481807079, 1.7889624833, 2.9234264971];
 
 d0 = [0.024; 0; 0.096];
@@ -123,7 +130,7 @@ function [q, err, other] = numIK(v, q_i)
         err = 2;
         return;
     end
-    disp(iter);
+//    disp(iter);
 
 //    q = round(q*10000)/10000;
     err = 0;

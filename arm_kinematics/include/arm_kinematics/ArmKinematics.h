@@ -6,6 +6,10 @@
 #include <vector>
 
 
+inline int sign(double val) {
+    return ((val > 0) - (val < 0));
+}
+
 void makeYoubotArmOffsets(JointValues & jointAngles);
 void makeKinematicModelOffsets(JointValues & jointAngles);
 bool checkAngles(const JointValues & jointAngles);
@@ -40,6 +44,7 @@ public:
     Vector3d calcMaxRot(const Vector3d & position);
     //wrapper for transformFromFrame5ToFrame0
     Vector3d ForwardKin(const JointValues &angles);
+    Vector3d ForwardKinWithGripper(const JointValues &angles);
     JointValues numericalIK(const Pose &pose, JointValues q);
     JointValues prevNumIKAngle;
 };
