@@ -108,13 +108,13 @@ function [q, err, other] = numIK(v, q_i)
 
     k = 0.05;
     iter = 0;
-    e = v - [FK(q); q(2) + q(3) + q(4); q(5)];
+    e = v - [FK_with_gripper(q); q(2) + q(3) + q(4); q(5)];
     while (norm(e) > 10e-10 & iter < iter_num) // (norm(e) > 10e-4) & 
         j = J(q);
 
         dq = inv(j'*j + k^2*eye(DOF, DOF))*j'*e;
         q = q + dq;
-        e = (v - [FK(q); q(2) + q(3) + q(4); q(5)]);
+        e = (v - [FK_with_gripper(q); q(2) + q(3) + q(4); q(5)]);
         iter = iter + 1;
     end
 
@@ -212,27 +212,27 @@ function R = getR(psi1, theta, psi2)
 endfunction
 function j = J(q)
     j = zeros(5, 5);
-    j(1, 1) = -sin(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + d*sin(q(4)+q(3)+q(2)));
-    j(2, 1) = cos(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + d*sin(q(4)+q(3)+q(2)));
+    j(1, 1) = -sin(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + (d+griperLength)*sin(q(4)+q(3)+q(2)));
+    j(2, 1) = cos(q(1))*(d1(1) + d2(3)*sin(q(2)) + d3(3)*sin(q(3)+q(2)) + (d+griperLength)*sin(q(4)+q(3)+q(2)));
     j(3, 1) = 0;
     j(4, 1) = 0;
     j(5, 1) = 0;
 
-    j(1, 2) = cos(q(1))*(d*cos(q(4)+q(3)+q(2)) + d3(3)*cos(q(3)+q(2)) + d2(3)*cos(q(2)));
-    j(2, 2) = sin(q(1))*(d2(3)*cos(q(2)) + d3(3)*cos(q(3)+q(2)) + d*cos(q(4)+q(3)+q(2)));
-    j(3, 2) = -d*sin(q(4)+q(3)+q(2)) - d3(3)*sin(q(3)+q(2)) - d2(3)*sin(q(2));
+    j(1, 2) = cos(q(1))*((d+griperLength)*cos(q(4)+q(3)+q(2)) + d3(3)*cos(q(3)+q(2)) + d2(3)*cos(q(2)));
+    j(2, 2) = sin(q(1))*(d2(3)*cos(q(2)) + d3(3)*cos(q(3)+q(2)) + (d+griperLength)*cos(q(4)+q(3)+q(2)));
+    j(3, 2) = -(d+griperLength)*sin(q(4)+q(3)+q(2)) - d3(3)*sin(q(3)+q(2)) - d2(3)*sin(q(2));
     j(4, 2) = 1;
     j(5, 2) = 0;
 
-    j(1, 3) = cos(q(1))*(d*cos(q(4)+q(3)+q(2)) + d3(3)*cos(q(3)+q(2)));
-    j(2, 3) = sin(q(1))*(d3(3)*cos(q(3)+q(2)) + d*cos(q(4)+q(3)+q(2)));
-    j(3, 3) = -d*sin(q(4)+q(3)+q(2)) - d3(3)*sin(q(3)+q(2));
+    j(1, 3) = cos(q(1))*((d+griperLength)*cos(q(4)+q(3)+q(2)) + d3(3)*cos(q(3)+q(2)));
+    j(2, 3) = sin(q(1))*(d3(3)*cos(q(3)+q(2)) + (d+griperLength)*cos(q(4)+q(3)+q(2)));
+    j(3, 3) = -(d+griperLength)*sin(q(4)+q(3)+q(2)) - d3(3)*sin(q(3)+q(2));
     j(4, 3) = 1;
     j(5, 3) = 0;
 
-    j(1, 4) = d*cos(q(1))*cos(q(4)+q(3)+q(2));
-    j(2, 4) = d*sin(q(1))*cos(q(4)+q(3)+q(2));
-    j(3, 4) = -d*sin(q(4)+q(3)+q(2));
+    j(1, 4) = (d+griperLength)*cos(q(1))*cos(q(4)+q(3)+q(2));
+    j(2, 4) = (d+griperLength)*sin(q(1))*cos(q(4)+q(3)+q(2));
+    j(3, 4) = -(d+griperLength)*sin(q(4)+q(3)+q(2));
     j(4, 4) = 1;
     j(5, 4) = 0;
 
@@ -307,7 +307,7 @@ function visualizationFK(q, axis, formating);
     end
     a = sca(axis);
     delete(a.children);
-    d = d4(3);// + d5(3);
+    d = d4(3) + griperLength;
     p = [d0(1) + d1(1); d0(3) + d1(3)];
     p = [p, p(:, 1) + [d2(3)*sin(q(2)); d2(3)*cos(q(2))]];
     p = [p, p(:, 2) + [d3(3)*sin(q(2) + q(3)); d3(3)*cos(q(2) + q(3))]];
@@ -347,7 +347,7 @@ function animation(q_traj, n, sleep_time, axis)
 
     for i = 1:n
         drawlater();
-        d = d4(3);// + d5(3);
+        d = d4(3) + griperLength;// + d5(3);
         p = [d0(1) + d1(1); d0(3) + d1(3)];
         p = [p, p(:, 1) + [d2(3)*sin(q_traj(2, i)); d2(3)*cos(q_traj(2, i))]];
         p = [p, p(:, 2) + [d3(3)*sin(q_traj(2, i) + q_traj(3, i)); d3(3)*cos(q_traj(2, i) + q_traj(3, i))]];

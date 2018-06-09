@@ -20,33 +20,36 @@ function ang = calcMaxRot(pos)
     ] - d1;
     
 
-    if d23 + d4(3) < norm(goal) then
+    d = d4(3) + griperLength;
+    if d23 + d < norm(goal) then
         disp("SOLUTION not exists!");
         return;
     end
 
-    cosq4 = (norm(goal)^2 - d23^2 - d4(3)^2)/(2*d23*d4(3));
+    cosq4 = (norm(goal)^2 - d23^2 - d^2)/(2*d23*d);
 //    disp(cosq4)
     q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
-    q2 = atan(goal(1), goal(3)) - atan(d4(3)*sin(q4), d23 + d4(3)*cos(q4));
+    q2 = atan(goal(1), goal(3)) - atan(d*sin(q4), d23 + d*cos(q4));
 
     q3 = 0;
     if q4 > jointLimits(4, 2) then
         q4 = jointLimits(4, 2);
-        d34 = norm(d3 + [d4(3)*sin(q4); 0; d4(3)*cos(q4)]);
+        disp("goal:" + string(goal));
+        d34 = norm(d3 + [d*sin(q4); 0; d*cos(q4)]);
+        disp("d34:" + string(d34));
         cosq3 = (norm(goal)^2 - d2(3)^2 - d34^2)/(2*d2(3)*d34);
         q3 = atan(sqrt(1 - cosq3^2), cosq3);
         q2 = atan(goal(1), goal(3)) - atan(d34*sin(q3), d2(3) + d34*cos(q3));
-        q3 = q3 - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+        q3 = q3 - atan(d*sin(q4), d3(3) + d*cos(q4));
         disp("q4 > jointLimits(4, 2)");
     end
     if q4 < jointLimits(4, 1) then
         q4 = jointLimits(4, 1);
-        d34 = norm(d3 + [d4(3)*sin(q4); 0; d4(3)*cos(q4)]);
+        d34 = norm(d3 + [d*sin(q4); 0; d*cos(q4)]);
         cosq3 = (norm(goal)^2 - d2(3)^2 - d34^2)/(2*d2(3)*d34);
         q3 = atan(sqrt(1 - cosq3^2), cosq3);
         q2 = atan(goal(1), goal(3)) - atan(d34*sin(q3), d2(3) + d34*cos(q3));
-        q3 = q3 - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+        q3 = q3 - atan(d*sin(q4), d3(3) + d*cos(q4));
         disp("q4 < jointLimits(4, 1)");
     end
 
@@ -55,18 +58,18 @@ function ang = calcMaxRot(pos)
         q2 = jointLimits(2, 2);
         d34 = goal - d2(3)*[sin(q2); 0; cos(q2)];
         disp("d34:" + string(d34));
-        cosq4 = (norm(d34)^2 - d3(3)^2 - d4(3)^2)/(2*d3(3)*d4(3));
+        cosq4 = (norm(d34)^2 - d3(3)^2 - d^2)/(2*d3(3)*d);
         q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
-        q23 = atan(d34(1), d34(3)) - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+        q23 = atan(d34(1), d34(3)) - atan(d*sin(q4), d3(3) + d*cos(q4));
         q3 = q23 - q2;
         disp("q2 > jointLimits(2, 2)");
     end
     if q2 < jointLimits(2, 1) then
         q2 = jointLimits(2, 1);
         d34 = goal - d2(3)*[sin(q2); 0; cos(q2)];
-        cosq4 = (norm(d34)^2 - d3(3)^2 - d4(3)^2)/(2*d3(3)*d4(3));
+        cosq4 = (norm(d34)^2 - d3(3)^2 - d^2)/(2*d3(3)*d);
         q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
-        q23 = atan(d34(1), d34(3)) - atan(d4(3)*sin(q4), d3(3) + d4(3)*cos(q4));
+        q23 = atan(d34(1), d34(3)) - atan(d*sin(q4), d3(3) + d*cos(q4));
         q3 = q23 - q2;
         disp("q2 < jointLimits(2, 2)");
     end
@@ -85,8 +88,8 @@ end
 ori = [%pi, 0];
 // Ψ -- not use
 
-initConfiguration = [0.33; 0.1; 0.0; ori(1); 0];
-endConfiguration = [0.33; 0.1; -0.09; ori(1); 0];
+initConfiguration = [0.312209; 0.0875557; -0.0260085; ori(1); 0];
+endConfiguration = [0.312209; 0.0875557; -0.0960085; ori(1); 0];
 maxVel = 0.05; maxAccel = 0.1;
 timeStep = 0.05;
 
@@ -179,11 +182,11 @@ else
     f = figure(100);
     a = f.children;
 end
-for i = 1:3
+for i = 1:5
     n = size(q_traj, 2);
-    subplot(3, 2, i + 1);
+    subplot(3, 2, i);
 
-    plot(time(1:n), q_traj(i + 1, :));
+    plot(time(1:n), q_traj(i, :));
 
     e = gce();
     e.children.thickness = 2;
