@@ -14,14 +14,14 @@ bool YoubotManipulator::trajectoryMove(red_msgs::ArmPoses::Request & req, red_ms
     startPose.position(0) = req.poses[0].x;
     startPose.position(1) = req.poses[0].y;
     startPose.position(2) = req.poses[0].z;
-    startPose.orientation(1) = req.poses[0].theta;
-    startPose.orientation(2) = req.poses[0].psi;
+    startPose.orientation(0) = req.poses[0].theta;
+    startPose.orientation(1) = req.poses[0].psi;
 
     endPose.position(0) = req.poses[1].x;
     endPose.position(1) = req.poses[1].y;
     endPose.position(2) = req.poses[1].z;
-    endPose.orientation(1) = req.poses[1].theta;
-    endPose.orientation(2) = req.poses[1].psi;
+    endPose.orientation(0) = req.poses[1].theta;
+    endPose.orientation(1) = req.poses[1].psi;
 
     moveToLineTrajectory(startPose, endPose);
 }
