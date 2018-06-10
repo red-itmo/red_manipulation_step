@@ -59,7 +59,7 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     //     }
 
     moveArm(startAngles);
-    // ros::Duration(2).sleep();
+    ros::Duration(1).sleep();
 
     // std::string acception = "y";
     // std::cout << "Proceed? (y, n)"; std::cin >> acception;
