@@ -26,11 +26,12 @@ public:
 
     std::vector<double> time;
 private:
-
+    int generateTrajectory(const Pose startPose, const Pose endPose, const double timeStep, JointValues initialAngles);
     double getVel(double time);
     double t0, t1, t2, t3, maxVel, maxAccel;
     int directionSign;
     Vector3d rotVel;
+    ArmKinematics solver;
 };
 
 class TrajectoryGenerator {

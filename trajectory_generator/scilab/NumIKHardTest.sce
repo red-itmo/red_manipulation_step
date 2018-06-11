@@ -6,7 +6,7 @@ exec(directory + "Trajectory.sce", -1);
 
 // Finding maximum y-rotation (theta angle);
 function ang = calcMaxRot(pos)
-    disp(pos)
+//    disp(pos)
     P = pos(1:3) - d0;
     sgn = sign(P(1));
     q1 = atan(P(2), sgn*P(1));      //TODO: Check
@@ -34,9 +34,9 @@ function ang = calcMaxRot(pos)
     q3 = 0;
     if q4 > jointLimits(4, 2) then
         q4 = jointLimits(4, 2);
-        disp("goal:" + string(goal));
+//        disp("goal:" + string(goal));
         d34 = norm(d3 + [d*sin(q4); 0; d*cos(q4)]);
-        disp("d34:" + string(d34));
+//        disp("d34:" + string(d34));
         cosq3 = (norm(goal)^2 - d2(3)^2 - d34^2)/(2*d2(3)*d34);
         q3 = atan(sqrt(1 - cosq3^2), cosq3);
         q2 = atan(goal(1), goal(3)) - atan(d34*sin(q3), d2(3) + d34*cos(q3));
@@ -54,10 +54,10 @@ function ang = calcMaxRot(pos)
     end
 
     if q2 > jointLimits(2, 2) then
-        disp("goal:" + string(goal));
+//        disp("goal:" + string(goal));
         q2 = jointLimits(2, 2);
         d34 = goal - d2(3)*[sin(q2); 0; cos(q2)];
-        disp("d34:" + string(d34));
+//        disp("d34:" + string(d34));
         cosq4 = (norm(d34)^2 - d3(3)^2 - d^2)/(2*d3(3)*d);
         q4 =  sgn*atan(sqrt(1 - cosq4^2), cosq4);
         q23 = atan(d34(1), d34(3)) - atan(d*sin(q4), d3(3) + d*cos(q4));
@@ -85,11 +85,11 @@ end
 
 // Desired orientation
 //      θ   Ψ
-ori = [%pi, 0];
-// Ψ -- not use
+ori = [-%pi, 0];
+// Ψ -- not us
 
-initConfiguration = [0.312209; 0.0875557; -0.0260085; ori(1); 0];
-endConfiguration = [0.312209; 0.0875557; -0.0960085; ori(1); 0];
+initConfiguration = [-0.37; 0; 0.09; ori(1); 0];
+endConfiguration = [-0.37; 0; -0.01; ori(1); 0];
 maxVel = 0.05; maxAccel = 0.1;
 timeStep = 0.05;
 
@@ -128,9 +128,9 @@ errors = [];
 curConf = poses(:, 1);
 ang = calcMaxRot(curConf);
 initialAngle = zeros(DOF, 1);
-initialAngle(2) = ang(1);
-initialAngle(3) = ang(2);
-initialAngle(4) = ang(3);
+//initialAngle(2) = ang(1);
+//initialAngle(3) = ang(2);
+//initialAngle(4) = ang(3);
 for i = 1:T;
     curConf = poses(:, i);
     sgn = sign(curConf(1));
@@ -166,7 +166,7 @@ for i = 1:T;
         disp("Caught ERROR!");
         disp("Information: ");
         disp(poses(:, i));
-        disp(offset)
+//        disp(offset)
         return;
     end
     initialAngle = q_curr;

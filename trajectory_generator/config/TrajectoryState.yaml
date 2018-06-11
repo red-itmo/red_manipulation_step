@@ -1,6 +1,6 @@
-start_position: [0.312209, 0.0854497, -0.0260085]
-end_position: [0.312209, 0.0854497, -0.0960085]
-angles: [3.1415,3.1415]
+start_position: [-0.37, 0, 0.09]
+end_position: [-0.37, 0, -0.01]
+angles: [-3.1415,-3.1415]
 v_m: 0.05
 a_m: 0.1
-time_step: 0.05
+time_step: 0.01
