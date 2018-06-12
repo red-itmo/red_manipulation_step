@@ -1,4 +1,5 @@
 #include <trajectory_generator/TrajectoryGenerator.h>
+#include <arm_kinematics/KinematicConstants.h>
 
 Trajectory::Trajectory()
 {}
@@ -417,4 +418,62 @@ void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & 
         time.push_back(dt * i);
     t3=posTra.size()*dt;
     ROS_INFO_STREAM("[trajectory]trj is generated, number of steps:" << posTra.size());
+}
+
+bool Trajectory::ConfSpaceTrj(JointValues startAng, JointValues endAng, JointValues accel, JointValues vel, double T)
+{
+    //The biggest ignored distance
+    int MIN_TRAJ = 0.1;
+    funcVector.resize(DOF);
+    for (size_t i = 0; i < DOF; ++i)
+        funcVector[i].setParams(accel(i), vel(i));
+
+    qTra.resize(0);
+    time.resize(0);
+
+    JointValues dq = endAng - startAng;
+    JointValues currAng, currJntAngVel, prevAng;
+    prevAng.setAll(-1000);
+    double timeSpan[] = {0, 0};
+    double currTimeSpan[] = {0, 0};
+    double maxTime = 0;
+
+    for (size_t i = 0; i < DOF; ++i) {
+        // If angle diff is small then the angle is constant (not valid)
+        funcVector[i].valid = false;
+        currAng(i) = startAng(i);
+        // if (MIN_TRAJ > std::abs(dq(i))) {
+            // if (DEBUG) std::cout << "LOW A" << (i + 1) << std::endl;
+            // continue;
+        // }
+
+        funcVector[i].valid = true;
+        funcVector[i].setPose(startAng(i), endAng(i), MIN_TRAJ);
+        funcVector[i].getTimeSpan(currTimeSpan);
+        if (maxTime < currTimeSpan[1] - currTimeSpan[0]) {
+            maxTime = currTimeSpan[1] - currTimeSpan[0];
+            timeSpan[0] = currTimeSpan[0];
+            timeSpan[1] = currTimeSpan[1];
+        }
+    }
+    timeSpan[1] += MIN_TRAJ*5;
+
+    for (double t = timeSpan[0]; t <= timeSpan[1]; t += T) {
+        for (size_t i = 0; i < DOF; ++i) {
+            if (!funcVector[i].valid) {
+                continue;
+            }
+            currAng(i) += T/2 * (funcVector[i].getVal(t + T) + funcVector[i].getVal(t));
+        }
+        //if the first iteration
+        if(prevAng(0)==-1000)
+            prevAng=currAng;
+        currJntAngVel = (currAng - prevAng) / T;
+        prevAng = currAng;
+        qdotTra.push_back(currJntAngVel);
+        qTra.push_back(currAng);
+        time.push_back(t);
+    }
+
+    return true;
 }
