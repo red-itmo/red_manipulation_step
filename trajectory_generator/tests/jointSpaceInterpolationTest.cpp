@@ -6,11 +6,13 @@ int main(int argc, char *argv[])
     ROS_INFO("traj test started");
     Trajectory traj;
 
-    double a[] = {0, 0, 0, 0, 0}; //start pose
+    double a[] = {1, 0, 0, 0, 0}; //start pose
     JointValues startPose(a);
+    // startPose.setAll(1);
 
     double b[] = {1, 1, 1, 1, 1}; //via point 1
     JointValues endPose(b);
+    endPose.setAll(2);
 
     JointValues maxAcc, maxVel;
     maxAcc.setAll(0.5);

@@ -44,6 +44,28 @@ std::vector<JointValues> TrajectoryGenerator::calculateTrajectory(const Pose & s
     return traj.qTra;
 }
 
+std::vector<JointValues> TrajectoryGenerator::calculateTrajectory(const JointValues & startAng, const JointValues & endAng)
+{
+    Trajectory traj;
+    //converting double to vector
+    JointValues accel;
+    accel.setAll(maxAcceleration);
+    JointValues vel;
+    vel.setAll(maxVelocity);
+
+    traj.ConfSpaceTrj(startAng,  endAng,  accel,  vel,  timeStep);
+    //if error in trajectory configuration space
+    if(traj.qTra.size()==0)
+    {
+        ROS_FATAL_STREAM("Error in trajectory!");
+        std::vector<JointValues> temp;
+        //return empty array
+        return temp;
+    }
+    traj.generateTrajectoryMsg(trajectory);
+    return traj.qTra;
+}
+
 void TrajectoryGenerator::setMaxVelocity(const double maxVel)
 {
 	maxVelocity = maxVel;

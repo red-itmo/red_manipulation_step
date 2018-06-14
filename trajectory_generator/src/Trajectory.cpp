@@ -433,7 +433,6 @@ bool Trajectory::ConfSpaceTrj(JointValues startAng, JointValues endAng, JointVal
 
     JointValues dq = endAng - startAng;
     JointValues currAng, currJntAngVel, prevAng;
-    prevAng.setAll(-1000);
     double timeSpan[] = {0, 0};
     double currTimeSpan[] = {0, 0};
     double maxTime = 0;
@@ -458,6 +457,10 @@ bool Trajectory::ConfSpaceTrj(JointValues startAng, JointValues endAng, JointVal
     }
     timeSpan[1] += MIN_TRAJ*5;
 
+    qTra.push_back(currAng);
+    qdotTra.push_back(currJntAngVel);
+    time.push_back(0);
+    prevAng = currAng;
     for (double t = timeSpan[0]; t <= timeSpan[1]; t += T) {
         for (size_t i = 0; i < DOF; ++i) {
             if (!funcVector[i].valid) {
@@ -465,9 +468,6 @@ bool Trajectory::ConfSpaceTrj(JointValues startAng, JointValues endAng, JointVal
             }
             currAng(i) += T/2 * (funcVector[i].getVal(t + T) + funcVector[i].getVal(t));
         }
-        //if the first iteration
-        if(prevAng(0)==-1000)
-            prevAng=currAng;
         currJntAngVel = (currAng - prevAng) / T;
         prevAng = currAng;
         qdotTra.push_back(currJntAngVel);

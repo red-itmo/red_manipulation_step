@@ -146,8 +146,12 @@ public:
     TrajectoryGenerator(const double maxVel, const double maxAccel, const double dt);
     ~TrajectoryGenerator();
 
+    //point to point trajectory
     std::vector<JointValues> calculateTrajectory(const Pose & startPose, const Pose & endPose);
+    //multisegment trajectory
     std::vector<JointValues> calculateTrajectory(const Pose & startPose, const std::vector<Pose> & segmentsPose);
+    //point to point in configuration space
+    std::vector<JointValues> calculateTrajectory(const JointValues & startAng, const JointValues & endAng);
 
     void setMaxVelocity(const double maxVel);
     void setMaxAcceleration(const double maxAccel);
