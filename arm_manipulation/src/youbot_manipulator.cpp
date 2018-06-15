@@ -57,7 +57,7 @@ bool YoubotManipulator::moveArm(const JointValues & angles)
         ROS_WARN("Position is not desired!");
         return false;
     }
-    return false;
+    return true;
 }
 
 bool YoubotManipulator::moveArm(const Pose & pose)
@@ -79,6 +79,41 @@ bool YoubotManipulator::moveArm(const Pose & pose)
         ROS_ERROR_STREAM("[Arm Manipulation] Solution NOT found!");
         return false;
     }
+}
+
+bool YoubotManipulator::moveArm(const JointValues & angles, const double maxVelocity, const double maxAcceleration)
+{
+    ROS_INFO("[Arm Manipulation] moveArm");
+
+    JointValues currentValues;
+    readJV(currentValues);
+
+    ROS_INFO_STREAM("[Arm Manipulation,moveToLineTrajectory] Max Vel: " << maxVelocity << " Max Accel: " << maxAcceleration <<" TimeStep: " << timeStep);
+    TrajectoryGenerator gen(maxVelocity, maxAcceleration, timeStep);
+    ROS_INFO("Calculating trajectory...");
+    std::vector<JointValues> rotationsTrajectory=gen.calculateTrajectory(currentValues, angles);
+
+    if (!gen.trajectory.points.empty())
+    {
+        ROS_INFO("Waiting for server...");
+        trajectoryAC->waitForServer();
+        ROS_INFO("[Arm Manipulation] Action server started, sending goal.");
+
+        control_msgs::FollowJointTrajectoryGoal goal;
+        goal.trajectory = gen.trajectory;
+
+        trajectoryAC->sendGoal(goal);
+
+        // Wait for the action to return
+        bool finished_before_timeout = trajectoryAC->waitForResult(ros::Duration(60.0));
+
+        if (finished_before_timeout) {
+            actionlib::SimpleClientGoalState state = trajectoryAC->getState();
+            ROS_INFO("[Arm Manipulation] Action finished: %s", state.toString().c_str());
+        } else ROS_ERROR("[Arm Manipulation] Action did not finish before the time out.");
+    }
+
+    return true;
 }
 
 void YoubotManipulator::moveGripper(double jointValue)
@@ -128,6 +163,23 @@ brics_actuator::JointPositions createGripperPositionMsg(double jointValue)
     return jointPositions;
 }
 
+bool YoubotManipulator::readJV(JointValues & val)
+{
+    val.setAll(0);
+    stateValues.setAll(0);
+    bool notChange = true;
+
+    do {
+        ros::spinOnce();
+        for (size_t i = 0; i < DOF; ++i) {
+            notChange = notChange && (val(i) == stateValues(i));
+        }
+        //std::cout<<"."<<notChange;
+    } while(notChange && nh.ok());
+    val = stateValues;
+    return true;
+}
+
 bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredValues) {
     ROS_INFO("[Arm Manipulation]Checking Achievement Of Position");
     JointValues currentValues, diff, prevValues;
@@ -135,15 +187,7 @@ bool YoubotManipulator::checkAchievementOfPosition(const JointValues & desiredVa
     uint32_t duration, startTimeAchievement = ros::Time::now().sec;
     uint32_t WATCHDOG_TIME = 8;
     do {
-        currentValues = stateValues;
-        do {
-            ros::spinOnce();
-            for (size_t i = 0; i < DOF; ++i) {
-                notChange = notChange && (currentValues(i) == stateValues(i));
-            }
-            //std::cout<<"."<<notChange;
-        } while(notChange && nh.ok());
-
+        readJV(currentValues);
         duration = ros::Time::now().sec - startTimeAchievement;
         if (duration>=WATCHDOG_TIME)
         {

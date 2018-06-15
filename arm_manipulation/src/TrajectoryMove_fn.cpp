@@ -23,10 +23,13 @@ bool YoubotManipulator::trajectoryMove(red_msgs::ArmPoses::Request & req, red_ms
     endPose.orientation(0) = req.poses[1].theta;
     endPose.orientation(1) = req.poses[1].psi;
 
-    moveToLineTrajectory(startPose, endPose);
+    moveToLineTrajectory(startPose, endPose, req.vel, req.accel);
+
+    res.error = 0;
+    return true;
 }
 
-void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose & endPose)
+void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose & endPose, const double mvMaxVel, const double mvMaxAccel)
 {
     JointValues startAngles;
     brics_actuator::JointPositions jointPositions;
@@ -58,7 +61,10 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     //     std::cout<<"\n";
     //     }
 
-    moveArm(startAngles);
+    if (mvMaxVel == 0 || mvMaxAccel == 0)
+        moveArm(startAngles);
+    else
+        moveArm(startAngles, mvMaxVel, mvMaxAccel);
     ros::Duration(1).sleep();
 
     // std::string acception = "y";

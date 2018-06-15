@@ -27,9 +27,10 @@ class YoubotManipulator
 
         bool moveArm(const Pose & pose);
         bool moveArm(const JointValues & angles);
+        bool moveArm(const JointValues & angles, const double maxVelocity, const double maxAcceleration);
         void moveGripper(double jointValue);
 
-        void moveToLineTrajectory(const Pose & startPose, const Pose & endPose);
+        void moveToLineTrajectory(const Pose & startPose, const Pose & endPose, const double mvMaxVel = 0, const double mvMaxAccel = 0);
         void moveToLineTrajectory(const Pose & startPose, const std::vector<Pose> & segmentsPose);
         void moveArmLoop();
 
@@ -72,6 +73,7 @@ class YoubotManipulator
         bool trajectoryMove(red_msgs::ArmPoses::Request & req, red_msgs::ArmPoses::Response & res);
         void stateCallback(const sensor_msgs::JointStatePtr & msg);
         bool checkAchievementOfPosition(const JointValues & desiredValues);
+        bool readJV(JointValues & val);
 
 };
 #endif
