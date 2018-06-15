@@ -423,7 +423,7 @@ void Trajectory::mstraj(double maxVel, double dt, double maxAccel, const Pose & 
 bool Trajectory::ConfSpaceTrj(JointValues startAng, JointValues endAng, JointValues accel, JointValues vel, double T)
 {
     //The biggest ignored distance
-    int MIN_TRAJ = 0.1;
+    double MIN_TRAJ = 0.1;
     funcVector.resize(DOF);
     for (size_t i = 0; i < DOF; ++i)
         funcVector[i].setParams(accel(i), vel(i));
@@ -455,11 +455,11 @@ bool Trajectory::ConfSpaceTrj(JointValues startAng, JointValues endAng, JointVal
             timeSpan[1] = currTimeSpan[1];
         }
     }
-    timeSpan[1] += MIN_TRAJ*5;
+    // timeSpan[1] += MIN_TRAJ*5;
 
-    qTra.push_back(currAng);
-    qdotTra.push_back(currJntAngVel);
-    time.push_back(0);
+    // qTra.push_back(currAng);
+    // qdotTra.push_back(currJntAngVel);
+    // time.push_back(0);
     prevAng = currAng;
     for (double t = timeSpan[0]; t <= timeSpan[1]; t += T) {
         for (size_t i = 0; i < DOF; ++i) {

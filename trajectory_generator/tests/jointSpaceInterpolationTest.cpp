@@ -1,4 +1,5 @@
 #include <trajectory_generator/TrajectoryGenerator.h>
+#include <ros/package.h>
 #include <fstream>
 
 int main(int argc, char *argv[])
@@ -24,10 +25,10 @@ int main(int argc, char *argv[])
 
 //--------jointspace logging section-----------//
     std::ofstream logFile;
-    std::string path = "/home/egor/vrepWS/src/red_manipulation_step/trajectory_generator/";
+    std::string path = ros::package::getPath("trajectory_generator");
     std::string logDirPath = path;
     std::stringstream filename;
-    filename << logDirPath << "logs/JointSpaceTraj" << ".log";
+    filename << logDirPath << "/logs/JointSpaceTraj" << ".log";
     std::string file = filename.str();
     logFile.open(file.c_str());
     if (!logFile.is_open())
