@@ -24,7 +24,7 @@ bool YoubotManipulator::trajectoryMove(red_msgs::ArmPoses::Request & req, red_ms
     endPose.orientation(1) = req.poses[1].psi;
 
     if (!moveToLineTrajectory(startPose, endPose, req.vel, req.accel))
-        return false
+        return false;
 
     res.error = 0;
     return true;
