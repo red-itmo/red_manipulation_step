@@ -23,13 +23,14 @@ bool YoubotManipulator::trajectoryMove(red_msgs::ArmPoses::Request & req, red_ms
     endPose.orientation(0) = req.poses[1].theta;
     endPose.orientation(1) = req.poses[1].psi;
 
-    moveToLineTrajectory(startPose, endPose, req.vel, req.accel);
+    if (!moveToLineTrajectory(startPose, endPose, req.vel, req.accel))
+        return false
 
     res.error = 0;
     return true;
 }
 
-void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose & endPose, const double mvMaxVel, const double mvMaxAccel)
+bool YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose & endPose, const double mvMaxVel, const double mvMaxAccel)
 {
     JointValues startAngles;
     brics_actuator::JointPositions jointPositions;
@@ -44,7 +45,7 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
     //if error occured during trajectory generation
     if(rotationsTrajectory.size()==0)
     {
-        return;
+        return false;
     }
 
     ROS_INFO_STREAM("[Arm Manipulation] Move to initial position.");
@@ -90,6 +91,7 @@ void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const Pose 
             ROS_INFO("[Arm Manipulation] Action finished: %s", state.toString().c_str());
         } else ROS_ERROR("[Arm Manipulation] Action did not finish before the time out.");
     }
+    return true;
 }
 
 void YoubotManipulator::moveToLineTrajectory(const Pose & startPose, const std::vector<Pose> & segmentsPose)

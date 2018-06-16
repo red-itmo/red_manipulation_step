@@ -30,7 +30,7 @@ class YoubotManipulator
         bool moveArm(const JointValues & angles, const double maxVelocity, const double maxAcceleration);
         void moveGripper(double jointValue);
 
-        void moveToLineTrajectory(const Pose & startPose, const Pose & endPose, const double mvMaxVel = 0, const double mvMaxAccel = 0);
+        bool moveToLineTrajectory(const Pose & startPose, const Pose & endPose, const double mvMaxVel = 0, const double mvMaxAccel = 0);
         void moveToLineTrajectory(const Pose & startPose, const std::vector<Pose> & segmentsPose);
         void moveArmLoop();
 

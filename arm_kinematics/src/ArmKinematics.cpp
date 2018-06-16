@@ -1,6 +1,6 @@
 #include <arm_kinematics/ArmKinematics.h>
 #include <arm_kinematics/KinematicConstants.h>
-#define KINEMATIC_DEBUG true
+#define KINEMATIC_DEBUG false
 
 ArmKinematics::ArmKinematics()
 {}
@@ -369,9 +369,10 @@ Vector3d ArmKinematics::calcMaxRot(const Vector3d & position)
     }
 
 
-    if (KINEMATIC_DEBUG)
+    if (KINEMATIC_DEBUG) {
         std::cout << "goal: \n" << goal << std::endl;
         std::cout << "d34: \n" << d34Vec << std::endl;
+    }
 
     return jointValues;
 }
