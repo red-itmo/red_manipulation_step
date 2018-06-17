@@ -110,14 +110,32 @@ void Trajectory::convertWorkSpaceToJointSpace(const Pose startPose, Pose endPose
 
     int result = 0;
     result = generateTrajectory(startPose, endPose, timeStep, startAngle);
-    if (result == 1) {
-        startAngle.setZero();
-        result = generateTrajectory(startPose, endPose, timeStep, startAngle);
-        if (result == 1) {
-            ROS_FATAL_STREAM("Can't find TRJ solution");
-            return;
-        }
+    if (result == 0) {
+        ROS_INFO_STREAM("Successfull");
+        return;
     }
+
+    startAngle.setZero();
+    result = generateTrajectory(startPose, endPose, timeStep, startAngle);
+
+    if (result == 0) {
+        ROS_INFO_STREAM("Successfull");
+        return;
+    }
+    startAngle.setAll(1);
+    result = generateTrajectory(startPose, endPose, timeStep, startAngle);
+
+    if (result == 0) {
+        ROS_INFO_STREAM("Successfull");
+        return;
+    }
+    startAngle.setAll(-1);
+    result = generateTrajectory(startPose, endPose, timeStep, startAngle);
+
+    if (result == 1) {
+        ROS_FATAL_STREAM("Can't find TRJ solution");
+        return;
+    } else ROS_INFO_STREAM("Successfull");
 }
 
 int Trajectory::generateTrajectory(const Pose startPose, const Pose endPose, const double timeStep, JointValues initialAngles)

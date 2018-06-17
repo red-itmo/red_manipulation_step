@@ -88,8 +88,8 @@ end
 ori = [-%pi, 0];
 // Ψ -- not us
 
-initConfiguration = [-0.37; 0; 0.09; ori(1); 0];
-endConfiguration = [-0.37; 0; -0.01; ori(1); 0];
+initConfiguration = [-0.33; 0.1; 0.09; ori(1); 0];
+endConfiguration = [-0.33; 0.1; -0.01; ori(1); 0];
 maxVel = 0.05; maxAccel = 0.1;
 timeStep = 0.05;
 
@@ -128,6 +128,7 @@ errors = [];
 curConf = poses(:, 1);
 ang = calcMaxRot(curConf);
 initialAngle = zeros(DOF, 1);
+initialAngle = -ones(DOF, 1);
 //initialAngle(2) = ang(1);
 //initialAngle(3) = ang(2);
 //initialAngle(4) = ang(3);

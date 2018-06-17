@@ -12,7 +12,7 @@ const double d2 = 0.155;
 const double d3 = 0.135;
 const double d4 = 0.13;
 // Old gripper 0.105
-const double griperLength = 0.17;
+const double griperLength = 0.18;
 
 const double jointMinAngles[5] = {-2.8905336, -1.1243948, -2.4783693, -1.7668386, -2.7181635};
 const double jointMaxAngles[5] = {2.9395372, 1.483526, 2.5324727, 1.6402375, 2.8128075};
